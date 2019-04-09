@@ -102,6 +102,10 @@ public abstract class Dimension {
         return STRING(name, null, PRIORITY_DEFAULT, emptyAsFailed);
     }
 
+    public static Dimension ARRAY_STRING(String name, boolean emptyAsFailed, int initialCapacity, float loadFactor) {
+        return STRING(name, null, PRIORITY_DEFAULT, emptyAsFailed, initialCapacity, loadFactor);
+    }
+
     public static Dimension ARRAY_STRING(String name) {
         return STRING(name, null, PRIORITY_DEFAULT, false);
     }
