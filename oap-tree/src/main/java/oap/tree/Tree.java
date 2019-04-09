@@ -227,12 +227,12 @@ public class Tree<T> {
     }
 
     private long[][] convertQueryToLong( List<?> query ) {
-        final int size = dimensions.size();
-        final long[][] longData = new long[size][];
+        var size = dimensions.size();
+        var longData = new long[size][];
 
-        for( int i = 0; i < size; i++ ) {
-            final Object value = query.get( i );
-            final Dimension dimension = dimensions.get( i );
+        for( var i = 0; i < size; i++ ) {
+            var value = query.get( i );
+            var dimension = dimensions.get( i );
             longData[i] = dimension.getOrNullValue( value );
         }
 
@@ -272,12 +272,12 @@ public class Tree<T> {
             );
         } else {
 
-            final Map<Integer, List<ValueData<T>>> map = Lists.groupBy( splitDimension.hash,
+            var map = Lists.groupBy( splitDimension.hash,
                 d -> ( int ) dimension.getOrDefault( d.data.get( splitDimension.dimension ), ANY_AS_ARRAY )[0] );
 
-            final int max = Collections.max( map.keySet() );
+            var max = Collections.max( map.keySet() );
 
-            final TreeNode<T>[] array = new TreeNode[max + 1];
+            var array = new TreeNode[max + 1];
             Arrays.fill( array, null );
 
             map.forEach( ( p, l ) -> array[p] = toNode( l, uniqueCount, bitSetWithDimension ) );
@@ -291,7 +291,7 @@ public class Tree<T> {
     }
 
     private BitSet withSet( BitSet eq, int dimension ) {
-        final BitSet bitSet = BitSet.valueOf( eq.toLongArray() );
+        var bitSet = BitSet.valueOf( eq.toLongArray() );
         bitSet.set( dimension );
         return bitSet;
     }
@@ -307,22 +307,22 @@ public class Tree<T> {
         for( int i = 0; i < dimensions.size(); i++ ) {
             if( eqBitSet.get( i ) ) continue;
 
-            final Dimension dimension = dimensions.get( i );
+            var dimension = dimensions.get( i );
 
-            final boolean isArray = dimension.operationType == null;
+            var isArray = dimension.operationType == null;
 
             if( isArray && splitDimension >= 0 ) continue;
 
-            final HashSet<Long> unique = new HashSet<>();
-            final HashSet<Array> uniqueArray = new HashSet<>();
+            var unique = new HashSet<>();
+            var uniqueArray = new HashSet<>();
 
             for( var vd : data ) {
-                final Object value = vd.data.get( i );
+                var value = vd.data.get( i );
                 if( value instanceof Array ) {
-                    final Array array = ( Array ) value;
+                    var array = ( Array ) value;
                     if( !array.isEmpty() ) uniqueArray.add( array );
                 } else {
-                    final long[] longValue = dimension.getOrDefault( value, ANY_AS_ARRAY );
+                    var longValue = dimension.getOrDefault( value, ANY_AS_ARRAY );
                     if( longValue != ANY_AS_ARRAY ) unique.add( longValue[0] );
                 }
 
@@ -354,7 +354,7 @@ public class Tree<T> {
 
             var partitionAnyOther = Stream.of( data ).partition( sd -> dimension.getOrDefault( sd.data.get( finalSplitDimension ), ANY_AS_ARRAY ) == ANY_AS_ARRAY );
 
-            final List<ValueData<T>> sorted = partitionAnyOther._2
+            var sorted = partitionAnyOther._2
                 .sorted( Comparator.comparingLong( sd -> dimension.getOrDefault( sd.data.get( finalSplitDimension ), ANY_AS_ARRAY )[0] ) )
                 .collect( toList() );
 
@@ -389,8 +389,8 @@ public class Tree<T> {
     }
 
     public Set<T> find( List<?> query ) {
-        final HashSet<T> result = new HashSet<>();
-        final long[][] longQuery = convertQueryToLong( query );
+        var result = new HashSet<T>();
+        var longQuery = convertQueryToLong( query );
         find( root, longQuery, result );
         return result;
     }

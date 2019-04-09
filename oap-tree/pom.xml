@@ -33,13 +33,18 @@
     <parent>
         <groupId>oap</groupId>
         <artifactId>oap-tree-parent</artifactId>
-        <version>1.0.0</version>
+        <version>1.0.1</version>
     </parent>
 
     <dependencies>
         <dependency>
             <groupId>${project.parent.groupId}</groupId>
             <artifactId>oap-stdlib</artifactId>
+            <version>${oap.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>${project.parent.groupId}</groupId>
+            <artifactId>oap-metrics</artifactId>
             <version>${oap.version}</version>
         </dependency>
 
