@@ -108,11 +108,14 @@ public abstract class Dimension {
 
     public static Dimension STRING(String name, OperationType operationType) {
         return STRING(name, operationType, PRIORITY_DEFAULT, false);
-
     }
 
     public static Dimension STRING(String name, OperationType operationType, int priority, boolean emptyAsFailed) {
-        var bits = new StringBits();
+        return STRING(name, operationType, priority, emptyAsFailed, 16, 0.75f);
+    }
+
+    public static Dimension STRING(String name, OperationType operationType, int priority, boolean emptyAsFailed, int initialCapacity, float loadFactor) {
+        var bits = new StringBits(initialCapacity, loadFactor);
         HashMapMetrics.unregister("tree-" + name);
         HashMapMetrics.meter("tree-" + name, bits.bits);
 
