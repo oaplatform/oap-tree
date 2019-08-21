@@ -210,19 +210,6 @@ public class Tree<T> {
         }
     }
 
-    private long[][] convertQueryToLong(List<?> query) {
-        var size = dimensions.size();
-        var longData = new long[size][];
-
-        for (var i = 0; i < size; i++) {
-            var value = query.get(i);
-            var dimension = dimensions.get(i);
-            longData[i] = dimension.getOrNullValue(value);
-        }
-
-        return longData;
-    }
-
     @SuppressWarnings("unchecked")
     private TreeNode<T> toNode(List<ValueData<T>> data, long[] uniqueCount, BitSet eq) {
         if (data.isEmpty()) return null;
@@ -241,7 +228,7 @@ public class Tree<T> {
                     splitDimension.sets,
                     s -> s.data.get(splitDimension.dimension)
             ).entrySet(), es -> {
-                final Array key = (Array) es.getKey();
+                var key = (Array) es.getKey();
                 return new ArrayBitSet(dimension.toBitSet(key), key.operation, toNode(es.getValue(), uniqueCount, bitSetWithDimension));
             });
 
@@ -374,7 +361,7 @@ public class Tree<T> {
 
     public Set<T> find(List<?> query) {
         var result = new HashSet<T>();
-        var longQuery = convertQueryToLong(query);
+        var longQuery = Dimension.convertQueryToLong(dimensions, query);
         find(root, longQuery, result);
         return result;
     }
@@ -434,16 +421,16 @@ public class Tree<T> {
 
     public String trace(List<?> query, Predicate<T> filter) {
         final HashMap<T, HashMap<Integer, TraceOperationTypeValues>> result = new HashMap<>();
-        final long[][] longQuery = convertQueryToLong(query);
+        final long[][] longQuery = Dimension.convertQueryToLong(dimensions, query);
         trace(root, longQuery, result, new TraceBuffer(), true);
 
 
-        final String queryStr = "query = " + Stream.of(query)
+        var queryStr = "query = " + Stream.of(query)
                 .zipWithIndex()
                 .map(p -> dimensions.get(p._2).name + ":" + printValue(p._1))
                 .collect(joining(",", "[", "]")) + "\n";
 
-        final String out = result
+        var out = result
                 .entrySet()
                 .stream()
                 .filter(e -> filter.test(e.getKey()))
@@ -465,7 +452,7 @@ public class Tree<T> {
 
     private String printValue(Object o) {
         if (o == null
-                || (o instanceof Optional<?> && !((Optional<?>) o).isPresent())
+                || (o instanceof Optional<?> && ((Optional<?>) o).isEmpty())
                 || (o instanceof List<?> && ((List<?>) o).isEmpty())
         ) {
             return Strings.UNKNOWN;
@@ -474,14 +461,14 @@ public class Tree<T> {
     }
 
     public Map<T, Map<String, Integer>> traceStatistics(List<List<?>> queries) {
-        final HashMap<T, Map<String, Integer>> resultStats = new HashMap<>();
+        var resultStats = new HashMap<T, Map<String, Integer>>();
 
         for (List<?> query : queries) {
-            final HashMap<T, HashMap<Integer, TraceOperationTypeValues>> result = new HashMap<>();
-            final long[][] longQuery = convertQueryToLong(query);
+            var result = new HashMap<T, HashMap<Integer, TraceOperationTypeValues>>();
+            var longQuery = Dimension.convertQueryToLong(dimensions, query);
             trace(root, longQuery, result, new TraceBuffer(), true);
 
-            final Map<T, Map<String, Integer>> stats = result
+            var stats = result
                     .entrySet()
                     .stream()
                     .collect(toMap(

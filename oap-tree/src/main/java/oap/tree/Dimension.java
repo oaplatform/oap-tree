@@ -24,7 +24,6 @@
 
 package oap.tree;
 
-import com.google.common.base.Preconditions;
 import lombok.EqualsAndHashCode;
 import lombok.NonNull;
 import oap.metrics.HashMapMetrics;
@@ -91,7 +90,7 @@ public abstract class Dimension {
 
             @Override
             protected long _getOrDefault(Object value) {
-                Preconditions.checkArgument(value instanceof Enum, "[" + name + "] value (" + value + " ) must be Enum");
+                assert value instanceof Enum : "[" + name + "] value (" + value + " ) must be Enum";
 
                 return ordinalToSorted[((Enum<?>) value).ordinal()];
             }
@@ -210,9 +209,22 @@ public abstract class Dimension {
         };
     }
 
+    public static long[][] convertQueryToLong(List<Dimension> dimensions, List<?> query) {
+        var size = dimensions.size();
+        var longData = new long[size][];
+
+        for (var i = 0; i < size; i++) {
+            var value = query.get(i);
+            var dimension = dimensions.get(i);
+            longData[i] = dimension.getOrNullValue(value);
+        }
+
+        return longData;
+    }
+
     public abstract String toString(long value);
 
-    final void init(Object value) {
+    public final void init(Object value) {
         if (value == null) return;
         if (value instanceof Optional<?>) {
             ((Optional<?>) value).ifPresent(this::_init);
@@ -222,11 +234,11 @@ public abstract class Dimension {
 
     protected abstract void _init(Object value);
 
-    final long[] getOrNullValue(Object value) {
+    public final long[] getOrNullValue(Object value) {
         return getOrDefault(value, nullAsLong);
     }
 
-    final long[] getOrDefault(Object value, long[] emptyValue) {
+    public final long[] getOrDefault(Object value, long[] emptyValue) {
         if (value == null) return emptyValue;
 
         if (value instanceof Optional<?>) {
@@ -270,7 +282,7 @@ public abstract class Dimension {
         return bitSet;
     }
 
-    final int direction(long[] qValue, long nodeValue) {
+    public final int direction(long[] qValue, long nodeValue) {
         var qValueLength = qValue.length;
 
         var head = qValue[0];
