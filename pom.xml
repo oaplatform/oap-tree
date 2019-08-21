@@ -56,9 +56,9 @@
         <maven.compiler.source>12</maven.compiler.source>
         <maven.compiler.target>12</maven.compiler.target>
 
-        <revision>1.2.1</revision>
+        <revision>1.2.2</revision>
 
-        <oap.version>4.24.9</oap.version>
+        <oap.version>4.24.10</oap.version>
         <lombok.version>1.18.8</lombok.version>
     </properties>
 

@@ -85,6 +85,10 @@ public abstract class Dimension {
             }
 
             @Override
+            public void reset() {
+            }
+
+            @Override
             protected void _init(Object value) {
             }
 
@@ -129,6 +133,11 @@ public abstract class Dimension {
             }
 
             @Override
+            public void reset() {
+                bits.reset();
+            }
+
+            @Override
             protected void _init(Object value) {
                 bits.computeIfAbsent((String) value);
             }
@@ -160,6 +169,10 @@ public abstract class Dimension {
             @Override
             public String toString(long value) {
                 return String.valueOf(value);
+            }
+
+            @Override
+            public void reset() {
             }
 
             @Override
@@ -197,6 +210,10 @@ public abstract class Dimension {
             }
 
             @Override
+            public void reset() {
+            }
+
+            @Override
             protected void _init(Object value) {
             }
 
@@ -223,6 +240,8 @@ public abstract class Dimension {
     }
 
     public abstract String toString(long value);
+
+    public abstract void reset();
 
     public final void init(Object value) {
         if (value == null) return;

@@ -197,6 +197,8 @@ public class Tree<T> {
         for (int i = 0; i < dimensions.size(); i++) {
             var p = dimensions.get(i);
 
+            p.reset();
+
             for (var dv : data) {
                 var v = dv.data.get(i);
                 if (v instanceof Array) {
