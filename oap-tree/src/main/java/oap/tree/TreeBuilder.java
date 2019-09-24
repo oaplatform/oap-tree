@@ -24,33 +24,39 @@
 
 package oap.tree;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class TreeBuilder<T> {
     private List<Dimension> dimensions;
     private double hashFillFactor = 0.25;
     private int arrayToTree = Integer.MIN_VALUE;
+    private int maxTraceListCount = 10;
 
-    public TreeBuilder( List<Dimension> dimensions ) {
+    public TreeBuilder(List<Dimension> dimensions) {
         this.dimensions = dimensions;
     }
 
-    public TreeBuilder<T> withHashFillFactor( double hashFillFactor ) {
+    public TreeBuilder<T> withHashFillFactor(double hashFillFactor) {
         this.hashFillFactor = hashFillFactor;
 
         return this;
     }
 
-    public TreeBuilder<T> withArrayToTree( int arrayToTree ) {
+    public TreeBuilder<T> withArrayToTree(int arrayToTree) {
         this.arrayToTree = arrayToTree;
 
         return this;
     }
 
-    public final Tree<T> load( List<Tree.ValueData<T>> data ) {
-        final Tree<T> tree = new Tree<>( dimensions, hashFillFactor, arrayToTree );
-        tree.load( data );
+    public TreeBuilder<T> withMaxTraceListCount(int maxTraceListCount) {
+        this.maxTraceListCount = maxTraceListCount;
+
+        return this;
+    }
+
+    public final Tree<T> load(List<Tree.ValueData<T>> data) {
+        var tree = new Tree<T>(dimensions, hashFillFactor, arrayToTree, maxTraceListCount);
+        tree.load(data);
 
         return tree;
     }

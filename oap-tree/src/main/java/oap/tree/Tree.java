@@ -49,6 +49,7 @@ import static oap.util.Pair.__;
 
 public class Tree<T> {
     private final int arrayToTree;
+    private final int maxTraceListCount;
     TreeNode<T> root = new Leaf<>(emptyList());
     private List<Dimension> dimensions;
     private double hashFillFactor;
@@ -57,13 +58,14 @@ public class Tree<T> {
     private long leafCount = 0;
 
     Tree(List<Dimension> dimensions) {
-        this(dimensions, 0.25, Integer.MAX_VALUE);
+        this(dimensions, 0.25, Integer.MAX_VALUE, 10);
     }
 
-    Tree(List<Dimension> dimensions, double hashFillFactor, int arrayToTree) {
+    Tree(List<Dimension> dimensions, double hashFillFactor, int arrayToTree, int maxTraceListCount) {
         this.dimensions = dimensions;
         this.hashFillFactor = hashFillFactor;
         this.arrayToTree = arrayToTree;
+        this.maxTraceListCount = maxTraceListCount;
     }
 
     public static <T> ValueData<T> v(T selection, List<?> data) {
@@ -422,8 +424,8 @@ public class Tree<T> {
     }
 
     public String trace(List<?> query, Predicate<T> filter) {
-        final HashMap<T, HashMap<Integer, TraceOperationTypeValues>> result = new HashMap<>();
-        final long[][] longQuery = Dimension.convertQueryToLong(dimensions, query);
+        var result = new HashMap<T, HashMap<Integer, TraceOperationTypeValues>>();
+        var longQuery = Dimension.convertQueryToLong(dimensions, query);
         trace(root, longQuery, result, new TraceBuffer(), true);
 
 
@@ -438,7 +440,7 @@ public class Tree<T> {
                 .filter(e -> filter.test(e.getKey()))
                 .map(e -> e.getKey().toString() + ": \n"
                                 + e.getValue().entrySet().stream().map(dv -> {
-                            final Dimension dimension = dimensions.get(dv.getKey());
+                            var dimension = dimensions.get(dv.getKey());
                             return "    " + dimension.name + "/" + dv.getKey() + ": "
                                     + dv.getValue().toString(dimension) + " " + queryToString(query, dv.getKey());
                         }
@@ -517,10 +519,10 @@ public class Tree<T> {
         if (node == null) return;
 
         if (node instanceof Leaf) {
-            final List<T> selections = ((Leaf<T>) node).selections;
+            var selections = ((Leaf<T>) node).selections;
             if (!success) {
                 selections.forEach(s -> {
-                    final HashMap<Integer, TraceOperationTypeValues> dv = result.computeIfAbsent(s, (ss) -> new HashMap<>());
+                    var dv = result.computeIfAbsent(s, (ss) -> new HashMap<>());
                     buffer.forEach((d, otv) ->
                             otv.forEach((ot, v) ->
                                     dv
@@ -533,56 +535,56 @@ public class Tree<T> {
                 selections.forEach(result::remove);
             }
         } else if (node instanceof Tree.Node) {
-            final Node n = (Node) node;
+            var n = (Node) node;
             trace(n.any, query, result, buffer.clone(), success);
 
-            final long[] qValue = query[n.dimension];
+            var qValue = query[n.dimension];
 
-            final Dimension dimension = dimensions.get(n.dimension);
+            var dimension = dimensions.get(n.dimension);
 
             if (qValue == ANY_AS_ARRAY) {
                 trace(n.equal, query, result, buffer.cloneWith(n.dimension, n.eqValue, dimension.operationType, false), false);
                 trace(n.right, query, result, buffer.clone(), false);
                 trace(n.left, query, result, buffer.clone(), false);
 
-                for (ArrayBitSet set : n.sets) {
+                for (var set : n.sets) {
                     trace(set.equal, query, result,
                             buffer.cloneWith(n.dimension, set.bitSet.stream(),
                                     set.operation.operationType, false), false);
                 }
             } else if (!n.sets.isEmpty()) {
-                for (ArrayBitSet set : n.sets) {
-                    final boolean eqSuccess = set.find(qValue);
+                for (var set : n.sets) {
+                    var eqSuccess = set.find(qValue);
                     trace(set.equal, query, result, buffer.cloneWith(n.dimension, set.bitSet.stream(),
                             set.operation.operationType, eqSuccess), success && eqSuccess);
                 }
             } else {
-                final int direction = dimension.direction(qValue, n.eqValue);
+                var direction = dimension.direction(qValue, n.eqValue);
 
-                final boolean left = (direction & Direction.LEFT) > 0;
+                var left = (direction & Direction.LEFT) > 0;
                 trace(n.left, query, result, buffer.clone(), success && left);
 
-                final boolean right = (direction & Direction.RIGHT) > 0;
+                var right = (direction & Direction.RIGHT) > 0;
                 trace(n.right, query, result, buffer.clone(), success && right);
 
-                final boolean eq = (direction & Direction.EQUAL) > 0;
+                var eq = (direction & Direction.EQUAL) > 0;
                 trace(n.equal, query, result, buffer.cloneWith(n.dimension, n.eqValue, dimension.operationType, eq), success && eq);
             }
         } else {
-            final HashNode n = (HashNode) node;
+            var n = (HashNode) node;
             trace(n.any, query, result, buffer.clone(), success);
 
-            final long[] qValue = query[n.dimension];
+            var qValue = query[n.dimension];
 
-            final Dimension dimension = dimensions.get(n.dimension);
+            var dimension = dimensions.get(n.dimension);
 
             if (qValue == ANY_AS_ARRAY) {
-                for (TreeNode<T> s : n.hash) {
+                for (var s : n.hash) {
                     trace(s, query, result, buffer.clone(), false);
                 }
             } else {
-                for (int i = 0; i < n.hash.length; i++) {
-                    final boolean contains = ArrayUtils.contains(qValue, i);
+                for (var i = 0; i < n.hash.length; i++) {
+                    var contains = ArrayUtils.contains(qValue, i);
                     trace(n.hash[i], query, result, buffer.cloneWith(n.dimension, i, dimension.operationType, contains), success && contains);
                 }
             }
@@ -595,7 +597,7 @@ public class Tree<T> {
     }
 
     public String toString(int depth) {
-        StringBuilder out = new StringBuilder();
+        var out = new StringBuilder();
 
         print(root, out, depth);
 
@@ -607,7 +609,7 @@ public class Tree<T> {
     }
 
     public int getMaxDepth() {
-        final AtomicInteger depth = new AtomicInteger(0);
+        var depth = new AtomicInteger(0);
         findMaxDepth(root, depth, 1);
 
         return depth.get();
@@ -622,20 +624,20 @@ public class Tree<T> {
         if (node instanceof Leaf) {
             if (currentDepth > maxDepth.get()) maxDepth.set(currentDepth);
         } else if (node instanceof Tree.Node) {
-            final Node n = (Node) node;
+            var n = (Node) node;
             findMaxDepth(n.left, maxDepth, currentDepth + 1);
             findMaxDepth(n.right, maxDepth, currentDepth + 1);
             findMaxDepth(n.any, maxDepth, currentDepth + 1);
             findMaxDepth(n.equal, maxDepth, currentDepth + 1);
 
-            for (ArrayBitSet abs : n.sets) {
+            for (var abs : n.sets) {
                 findMaxDepth(abs.equal, maxDepth, currentDepth + 1);
             }
         } else {
-            final HashNode n = (HashNode) node;
+            var n = (HashNode) node;
 
             findMaxDepth(n.any, maxDepth, currentDepth + 1);
-            for (int i = 0; i < n.hash.length; i++) {
+            for (var i = 0; i < n.hash.length; i++) {
                 findMaxDepth(n.hash[i], maxDepth, currentDepth + 1);
             }
         }
@@ -652,9 +654,9 @@ public class Tree<T> {
             var children = Lists.filter(node.children(), p -> p._2 != null);
 
             for (int i = 0; i < children.size(); i++) {
-                final Pair<String, TreeNode<T>> child = children.get(i);
-                final String name = child._1;
-                final TreeNode<T> value = child._2;
+                var child = children.get(i);
+                var name = child._1;
+                var value = child._2;
 
                 if (value != null)
                     print(prefix + (isTail ? "    " : "│   "), i + 1 >= children.size(), value, out, name, level + 1, depth);
@@ -721,7 +723,7 @@ public class Tree<T> {
 
         @Override
         public void print(StringBuilder out) {
-            final String collect = selections.stream()
+            var collect = selections.stream()
                     .map(Object::toString)
                     .collect(java.util.stream.Collectors.joining(","));
             out.append("dn|[")
@@ -730,7 +732,27 @@ public class Tree<T> {
         }
     }
 
-    private static class TraceOperationTypeValues extends HashMap<OperationType, HashSet<Long>> {
+    public static class TreeArrayStatistic {
+        public final HashMap<ArrayOperation, HashMap<Long, AtomicInteger>> counts = new HashMap<>();
+        public final HashMap<ArrayOperation, HashMap<Long, AtomicInteger>> size = new HashMap<>();
+
+        public void update(ArrayOperation operationType, long count) {
+            if (count > 0)
+                counts
+                        .computeIfAbsent(operationType, op -> new HashMap<>())
+                        .computeIfAbsent(count, (i) -> new AtomicInteger())
+                        .incrementAndGet();
+        }
+
+        public void updateSize(ArrayOperation operationType, long count) {
+            size
+                    .computeIfAbsent(operationType, op -> new HashMap<>())
+                    .computeIfAbsent(count, (i) -> new AtomicInteger())
+                    .incrementAndGet();
+        }
+    }
+
+    private class TraceOperationTypeValues extends HashMap<OperationType, HashSet<Long>> {
         public void add(OperationType operationType, long eqValue) {
             this.computeIfAbsent(operationType, (ot) -> new HashSet<>()).add(eqValue);
         }
@@ -740,14 +762,22 @@ public class Tree<T> {
         }
 
         public String toString(Dimension dimension) {
-            return entrySet().stream().map(e -> e.getValue().stream()
-                    .map(dimension::toString)
-                    .collect(joining(",", "[", "]")) + " " + e.getKey())
+            String collect = entrySet().stream()
+                    .map(e -> {
+                                var size = e.getValue().size();
+
+                                return e.getValue().stream()
+                                        .limit(maxTraceListCount)
+                                        .map(dimension::toString)
+                                        .collect(joining(",", "[", size > maxTraceListCount ? ",...]" : "]")) + " " + e.getKey();
+                            }
+                    )
                     .collect(joining(", "));
+            return collect;
         }
     }
 
-    private static class TraceBuffer extends HashMap<Integer, TraceOperationTypeValues> {
+    private class TraceBuffer extends HashMap<Integer, TraceOperationTypeValues> {
 
 
         public TraceBuffer() {
@@ -779,26 +809,6 @@ public class Tree<T> {
                 eqValue.forEach(eqv -> v.add(operationType, eqv));
             }
             return clone;
-        }
-    }
-
-    public static class TreeArrayStatistic {
-        public final HashMap<ArrayOperation, HashMap<Long, AtomicInteger>> counts = new HashMap<>();
-        public final HashMap<ArrayOperation, HashMap<Long, AtomicInteger>> size = new HashMap<>();
-
-        public void update(ArrayOperation operationType, long count) {
-            if (count > 0)
-                counts
-                        .computeIfAbsent(operationType, op -> new HashMap<>())
-                        .computeIfAbsent(count, (i) -> new AtomicInteger())
-                        .incrementAndGet();
-        }
-
-        public void updateSize(ArrayOperation operationType, long count) {
-            size
-                    .computeIfAbsent(operationType, op -> new HashMap<>())
-                    .computeIfAbsent(count, (i) -> new AtomicInteger())
-                    .incrementAndGet();
         }
     }
 
@@ -887,11 +897,11 @@ public class Tree<T> {
 
         @Override
         public List<Pair<String, TreeNode<T>>> children() {
-            final ArrayList<Pair<String, TreeNode<T>>> result = new ArrayList<>();
+            var result = new ArrayList<Pair<String, TreeNode<T>>>();
             result.add(__("a", any));
 
-            for (int i = 0; i < hash.length; i++) {
-                final TreeNode<T> heq = hash[i];
+            for (var i = 0; i < hash.length; i++) {
+                var heq = hash[i];
                 result.add(__("h" + i, heq));
             }
 
@@ -900,7 +910,7 @@ public class Tree<T> {
 
         @Override
         public void print(StringBuilder out) {
-            final Dimension dimension = dimensions.get(this.dimension);
+            var dimension = dimensions.get(this.dimension);
             out.append("kdh|")
                     .append("d:")
                     .append(dimension.name).append('/').append(this.dimension);
@@ -930,27 +940,30 @@ public class Tree<T> {
 
         @Override
         public List<Pair<String, TreeNode<T>>> children() {
-            final ArrayList<Pair<String, TreeNode<T>>> result = new ArrayList<>();
+            var result = new ArrayList<Pair<String, TreeNode<T>>>();
             result.add(__("l", left));
             result.add(__("r", right));
             result.add(__("eq", equal));
             result.add(__("a", any));
 
-            for (ArrayBitSet set : sets)
+            for (var set : sets)
                 result.add(__((set.operation.name() + ":") + bitSetToData(set.bitSet), set.equal));
 
             return result;
         }
 
         private String bitSetToData(BitSet bitSet) {
-            final Dimension dimension = dimensions.get(this.dimension);
+            var dimension = dimensions.get(this.dimension);
 
-            return bitSet.stream().mapToObj(dimension::toString).collect(joining(",", "[", "]"));
+            return bitSet
+                    .stream()
+                    .limit(maxTraceListCount)
+                    .mapToObj(dimension::toString).collect(joining(",", "[", bitSet.stream().count() > maxTraceListCount ? ",...]" : "]"));
         }
 
         @Override
         public void print(StringBuilder out) {
-            final Dimension dimension = dimensions.get(this.dimension);
+            var dimension = dimensions.get(this.dimension);
             out.append("kdn|")
                     .append("d:")
                     .append(dimension.name).append('/').append(this.dimension)
