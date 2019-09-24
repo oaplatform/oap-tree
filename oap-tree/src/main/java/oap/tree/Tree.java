@@ -955,10 +955,11 @@ public class Tree<T> {
         private String bitSetToData(BitSet bitSet) {
             var dimension = dimensions.get(this.dimension);
 
+            var size = bitSet.stream().limit(maxTraceListCount + 1).count();
             return bitSet
                     .stream()
                     .limit(maxTraceListCount)
-                    .mapToObj(dimension::toString).collect(joining(",", "[", bitSet.stream().count() > maxTraceListCount ? ",...]" : "]"));
+                    .mapToObj(dimension::toString).collect(joining(",", "[", size > maxTraceListCount ? ",...]" : "]"));
         }
 
         @Override
