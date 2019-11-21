@@ -26,7 +26,6 @@ package oap.tree;
 
 import lombok.EqualsAndHashCode;
 import lombok.NonNull;
-import oap.metrics.HashMapMetrics;
 import oap.util.StringBits;
 
 import java.util.*;
@@ -123,8 +122,6 @@ public abstract class Dimension {
 
     public static Dimension STRING(String name, OperationType operationType, int priority, boolean emptyAsFailed, int initialCapacity, float loadFactor) {
         var bits = new StringBits(initialCapacity, loadFactor);
-        HashMapMetrics.unregister("tree-" + name);
-        HashMapMetrics.meter("tree-" + name, bits.bits);
 
         return new Dimension(name, operationType, priority, new long[]{StringBits.UNKNOWN}, emptyAsFailed) {
             @Override
