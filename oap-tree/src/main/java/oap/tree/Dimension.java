@@ -279,6 +279,34 @@ public abstract class Dimension {
             }
 
             return res;
+        } else if (value instanceof int[]) {
+            var arr = (int[]) value;
+
+            if (arr.length == 0) return emptyValue;
+
+            var res = new long[arr.length];
+
+            for (var i = 0; i < arr.length; i++) {
+                res[i] = arr[i];
+            }
+
+            if (res.length > 1) {
+                Arrays.sort(res);
+            }
+
+            return res;
+        } else if (value instanceof long[]) {
+            var arr = (long[]) value;
+
+            if (arr.length == 0) return emptyValue;
+
+            var res = Arrays.copyOf(arr, arr.length);
+
+            if (res.length > 1) {
+                Arrays.sort(res);
+            }
+
+            return res;
         } else {
             return new long[]{_getOrDefault(value)};
         }
