@@ -42,14 +42,17 @@ public abstract class Dimension {
     public final int priority;
     public final long[] nullAsLong;
     public final boolean emptyAsFailed;
+    public final boolean preFilter;
     public OperationType operationType;
 
-    public Dimension(@NonNull String name, OperationType operationType, int priority, long[] nullAsLong, boolean emptyAsFailed) {
+    public Dimension(@NonNull String name, OperationType operationType, int priority, long[] nullAsLong,
+                     boolean emptyAsFailed, boolean preFilter) {
         this.name = name;
         this.operationType = operationType;
         this.priority = priority;
         this.nullAsLong = nullAsLong;
         this.emptyAsFailed = emptyAsFailed;
+        this.preFilter = preFilter;
     }
 
     public static <T extends Enum> Dimension ARRAY_ENUM(String name, Class<T> clazz, T nullValue, boolean emptyAsFailed) {
@@ -77,7 +80,7 @@ public abstract class Dimension {
         }
 
         return new Dimension(name, operationType, priority,
-                nullValue == null ? ANY_AS_ARRAY : new long[]{ordinalToSorted[nullValue.ordinal()]}, emptyAsFailed) {
+                nullValue == null ? ANY_AS_ARRAY : new long[]{ordinalToSorted[nullValue.ordinal()]}, emptyAsFailed, false) {
             @Override
             public String toString(long value) {
                 return sortedToName[(int) value];
@@ -100,30 +103,30 @@ public abstract class Dimension {
         };
     }
 
-    public static Dimension ARRAY_STRING(String name, boolean emptyAsFailed) {
-        return STRING(name, null, PRIORITY_DEFAULT, emptyAsFailed);
+    public static Dimension ARRAY_STRING(String name, boolean emptyAsFailed, boolean preFilter) {
+        return STRING(name, null, PRIORITY_DEFAULT, emptyAsFailed, preFilter);
     }
 
-    public static Dimension ARRAY_STRING(String name, boolean emptyAsFailed, int initialCapacity, float loadFactor) {
-        return STRING(name, null, PRIORITY_DEFAULT, emptyAsFailed, initialCapacity, loadFactor);
+    public static Dimension ARRAY_STRING(String name, boolean emptyAsFailed, int initialCapacity, float loadFactor, boolean preFilter) {
+        return STRING(name, null, PRIORITY_DEFAULT, emptyAsFailed, initialCapacity, loadFactor, preFilter);
     }
 
-    public static Dimension ARRAY_STRING(String name) {
-        return STRING(name, null, PRIORITY_DEFAULT, false);
+    public static Dimension ARRAY_STRING(String name, boolean preFilter) {
+        return STRING(name, null, PRIORITY_DEFAULT, false, preFilter);
     }
 
-    public static Dimension STRING(String name, OperationType operationType) {
-        return STRING(name, operationType, PRIORITY_DEFAULT, false);
+    public static Dimension STRING(String name, OperationType operationType, boolean preFilter) {
+        return STRING(name, operationType, PRIORITY_DEFAULT, false, preFilter);
     }
 
-    public static Dimension STRING(String name, OperationType operationType, int priority, boolean emptyAsFailed) {
-        return STRING(name, operationType, priority, emptyAsFailed, 16, 0.75f);
+    public static Dimension STRING(String name, OperationType operationType, int priority, boolean emptyAsFailed, boolean preFilter) {
+        return STRING(name, operationType, priority, emptyAsFailed, 16, 0.75f, preFilter);
     }
 
-    public static Dimension STRING(String name, OperationType operationType, int priority, boolean emptyAsFailed, int initialCapacity, float loadFactor) {
+    public static Dimension STRING(String name, OperationType operationType, int priority, boolean emptyAsFailed, int initialCapacity, float loadFactor, boolean preFilter) {
         var bits = new StringBits(initialCapacity, loadFactor);
 
-        return new Dimension(name, operationType, priority, new long[]{StringBits.UNKNOWN}, emptyAsFailed) {
+        return new Dimension(name, operationType, priority, new long[]{StringBits.UNKNOWN}, emptyAsFailed, preFilter) {
             @Override
             public String toString(long value) {
                 return bits.valueOf(value);
@@ -162,7 +165,7 @@ public abstract class Dimension {
 
     public static Dimension LONG(String name, OperationType operationType, int priority, Long nullValue, boolean emptyAsFailed) {
         return new Dimension(name, operationType, priority,
-                nullValue == null ? ANY_AS_ARRAY : new long[]{nullValue}, emptyAsFailed) {
+                nullValue == null ? ANY_AS_ARRAY : new long[]{nullValue}, emptyAsFailed, false) {
             @Override
             public String toString(long value) {
                 return String.valueOf(value);
@@ -200,7 +203,7 @@ public abstract class Dimension {
     public static Dimension BOOLEAN(String name, OperationType operationType, int priority, Boolean nullValue, boolean emptyAsFailed) {
         var nullAsLong = nullValue == null ? ANY_AS_ARRAY : new long[]{(nullValue ? 1 : 0)};
 
-        return new Dimension(name, operationType, priority, nullAsLong, emptyAsFailed) {
+        return new Dimension(name, operationType, priority, nullAsLong, emptyAsFailed, false) {
             @Override
             public String toString(long value) {
                 return value == 0 ? "false" : "true";
@@ -320,8 +323,8 @@ public abstract class Dimension {
     }
 
     @SuppressWarnings("unchecked")
-    BitSet toBitSet(List list) {
-        var bitSet = new BitSet();
+    oap.util.BitSet toBitSet(List list) {
+        var bitSet = new oap.util.BitSet();
         list.forEach(item -> bitSet.set((int) this._getOrDefault(item)));
         return bitSet;
     }

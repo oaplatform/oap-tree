@@ -48,9 +48,10 @@ import static oap.tree.Dimension.OperationType.*;
 import static oap.util.Pair.__;
 
 public class Tree<T> {
-    private final int arrayToTree;
     private final int maxTraceListCount;
+    private final ArrayList<PreFilter> preFileters = new ArrayList<>();
     TreeNode<T> root = new Leaf<>(emptyList());
+    private boolean preFilter;
     private List<Dimension> dimensions;
     private double hashFillFactor;
     private long memory;
@@ -58,13 +59,12 @@ public class Tree<T> {
     private long leafCount = 0;
 
     Tree(List<Dimension> dimensions) {
-        this(dimensions, 0.25, Integer.MAX_VALUE, 10);
+        this(dimensions, 0.25, 10);
     }
 
-    Tree(List<Dimension> dimensions, double hashFillFactor, int arrayToTree, int maxTraceListCount) {
+    Tree(List<Dimension> dimensions, double hashFillFactor, int maxTraceListCount) {
         this.dimensions = dimensions;
         this.hashFillFactor = hashFillFactor;
-        this.arrayToTree = arrayToTree;
         this.maxTraceListCount = maxTraceListCount;
     }
 
@@ -144,6 +144,30 @@ public class Tree<T> {
         updateCount(root);
 
         memory = MemoryMeter.get().measureDeep(this);
+
+        this.preFileters.clear();
+        for (var i = 0; i < dimensions.size(); i++) {
+            var dimension = dimensions.get(i);
+            if (!dimension.preFilter) continue;
+
+
+            var res = new ArrayList<>();
+
+            for (var v : data) {
+                var dv = v.data.get(i);
+                if (dv instanceof Collection) {
+                    res.addAll((Collection<?>) dv);
+                } else {
+                    res.add(dv);
+                }
+            }
+
+            var bs = dimension.toBitSet(res);
+
+            this.preFileters.add(new PreFilter(dimension, i, bs));
+        }
+
+        this.preFilter = !this.preFileters.isEmpty();
     }
 
     private List<ValueData<T>> fixEmptyAsFailed(List<ValueData<T>> data) {
@@ -228,7 +252,7 @@ public class Tree<T> {
 
 
         if (splitDimension.hash.isEmpty()) {
-            final List<ArrayBitSet> sets = Lists.map(Lists.groupBy(
+            var sets = Lists.map(Lists.groupBy(
                     splitDimension.sets,
                     s -> s.data.get(splitDimension.dimension)
             ).entrySet(), es -> {
@@ -366,6 +390,22 @@ public class Tree<T> {
     public Set<T> find(List<?> query) {
         var result = new HashSet<T>();
         var longQuery = Dimension.convertQueryToLong(dimensions, query);
+
+        if (preFilter) {
+            for (var pd : preFileters) {
+                var vals = longQuery[pd.index];
+                var found = false;
+                for (var v : vals) {
+                    if (pd.bitSet.get(v)) {
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (!found) return Set.of();
+            }
+        }
+
         find(root, longQuery, result);
         return result;
     }
@@ -426,13 +466,38 @@ public class Tree<T> {
     public String trace(List<?> query, Predicate<T> filter) {
         var result = new HashMap<T, HashMap<Integer, TraceOperationTypeValues>>();
         var longQuery = Dimension.convertQueryToLong(dimensions, query);
-        trace(root, longQuery, result, new TraceBuffer(), true);
-
 
         var queryStr = "query = " + Stream.of(query)
                 .zipWithIndex()
                 .map(p -> dimensions.get(p._2).name + ":" + printValue(p._1))
                 .collect(joining(",", "[", "]")) + "\n";
+
+        if (root == null) {
+            return queryStr + "Tree is empty";
+        }
+
+        var outPF = new StringBuilder();
+        if (preFilter) {
+            for (var pd : preFileters) {
+                var vals = longQuery[pd.index];
+                var found = false;
+                for (var v : vals) {
+                    if (pd.bitSet.get(v)) {
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (!found) {
+                    outPF.append("  Dimension: ").append(pd.dimension.name).append(", q: ").append(queryToString(query, pd.index)).append("\n");
+                }
+            }
+        }
+
+        if (outPF.length() == 0) {
+            trace(root, longQuery, result, new TraceBuffer(), true);
+        }
+
 
         var out = result
                 .entrySet()
@@ -447,11 +512,9 @@ public class Tree<T> {
                         ).collect(joining("\n"))
                 ).collect(joining("\n"));
 
-        if (root == null) {
-            return queryStr + "Tree is empty";
-        }
-
-        return queryStr + (out.length() > 0 ? "Expecting:\n" + out : "ALL OK");
+        return queryStr
+                + (outPF.length() > 0 ? "Tree Prefilters:\n" + outPF : "")
+                + (out.length() > 0 ? "Expecting:\n" + out : (outPF.length() == 0 ? "ALL OK" : ""));
     }
 
     private String printValue(Object o) {
@@ -679,6 +742,18 @@ public class Tree<T> {
         List<Pair<String, TreeNode<T>>> children();
 
         void print(StringBuilder out);
+    }
+
+    public static class PreFilter {
+        public final Dimension dimension;
+        public final int index;
+        public final oap.util.BitSet bitSet;
+
+        public PreFilter(Dimension dimension, int index, oap.util.BitSet bitSet) {
+            this.dimension = dimension;
+            this.index = index;
+            this.bitSet = bitSet;
+        }
     }
 
     @ToString(callSuper = true)

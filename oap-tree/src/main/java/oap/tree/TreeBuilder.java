@@ -29,7 +29,6 @@ import java.util.List;
 public class TreeBuilder<T> {
     private List<Dimension> dimensions;
     private double hashFillFactor = 0.25;
-    private int arrayToTree = Integer.MIN_VALUE;
     private int maxTraceListCount = 10;
 
     public TreeBuilder(List<Dimension> dimensions) {
@@ -42,12 +41,6 @@ public class TreeBuilder<T> {
         return this;
     }
 
-    public TreeBuilder<T> withArrayToTree(int arrayToTree) {
-        this.arrayToTree = arrayToTree;
-
-        return this;
-    }
-
     public TreeBuilder<T> withMaxTraceListCount(int maxTraceListCount) {
         this.maxTraceListCount = maxTraceListCount;
 
@@ -55,7 +48,7 @@ public class TreeBuilder<T> {
     }
 
     public final Tree<T> load(List<Tree.ValueData<T>> data) {
-        var tree = new Tree<T>(dimensions, hashFillFactor, arrayToTree, maxTraceListCount);
+        var tree = new Tree<T>(dimensions, hashFillFactor, maxTraceListCount);
         tree.load(data);
 
         return tree;

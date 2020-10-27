@@ -101,35 +101,22 @@ public class TreeArrayTest {
         assertThat(tree.find(l(l(1L, 2L, 3L)))).containsOnly("1");
     }
 
-    @Test(enabled = false)
-    public void testArrayExpand() {
-        final Tree<String> tree = Tree
-                .<String>tree(ARRAY_LONG("d1", null))
-                .withArrayToTree(4)
-                .withHashFillFactor(1)
-                .load(l(
-                        v("1", l(a(OR, 1L, 2L))),
-                        v("2", l(a(OR, 2L))),
-                        v("3", l(a(OR, 1L, 2L, 3L)))
-                ));
-
-        System.out.println(tree.toString());
-
-        assertThat(tree.find(l(1L))).containsOnly("1", "3");
-        assertThat(tree.find(l(l(5L, 1L)))).containsOnly("1", "3");
-        assertThat(tree.find(l(2L))).containsOnly("1", "2", "3");
-        assertThat(tree.find(l(3L))).containsOnly("3");
-
-        assertThat(tree.find(l(5L))).isEmpty();
-
-        assertThat(tree.getMaxDepth()).isEqualTo(3);
-        assertThat(((Tree.Node) tree.root).sets).isEmpty();
-    }
-
     @Test
     public void testArrayString() {
         final Tree<String> tree = Tree
-                .<String>tree(ARRAY_STRING("d1"))
+                .<String>tree(ARRAY_STRING("d1", false))
+                .load(l(v("1", l(a(OR, "s1", "s2")))));
+
+        System.out.println(tree.toString());
+
+        assertThat(tree.find(l("s1"))).containsOnly("1");
+        assertThat(tree.find(l("s5"))).isEmpty();
+    }
+
+    @Test
+    public void testArrayStringPreFilter() {
+        final Tree<String> tree = Tree
+                .<String>tree(ARRAY_STRING("d1", true))
                 .load(l(v("1", l(a(OR, "s1", "s2")))));
 
         System.out.println(tree.toString());
@@ -180,7 +167,7 @@ public class TreeArrayTest {
     @Test
     public void testArrayOptimize() {
         final Tree<String> tree = Tree
-                .<String>tree(ARRAY_LONG("d1", null), ARRAY_STRING("d2"))
+                .<String>tree(ARRAY_LONG("d1", null), ARRAY_STRING("d2", false))
                 .load(l(
                         v("1", l(a(OR, 1L, 2L), a(OR, "1", "2"))),
                         v("2", l(a(OR, 1L, 2L), a(OR, "1", "2"))),
@@ -213,7 +200,7 @@ public class TreeArrayTest {
     @Test
     public void testFindNoData() {
         final Tree<String> tree = Tree
-                .<String>tree(ARRAY_STRING("d1"), ARRAY_STRING("d2"))
+                .<String>tree(ARRAY_STRING("d1", false), ARRAY_STRING("d2", false))
                 .load(l(
                         v("1", l(a(OR), a(NOT))),
                         v("2", l(a(NOT), a(OR)))
@@ -257,7 +244,7 @@ public class TreeArrayTest {
     @Test
     public void testEmptyFailed() {
         final Tree<String> tree = Tree
-                .<String>tree(ARRAY_STRING("d1", true), ARRAY_STRING("d2", true))
+                .<String>tree(ARRAY_STRING("d1", true, false), ARRAY_STRING("d2", true, false))
                 .load(l(
                         v("1", l(a(OR, 1L), a(NOT))),
                         v("2", l(a(NOT), a(OR, 2L)))

@@ -248,7 +248,25 @@ public class TreeTest {
     @Test
     public void testString() {
         final Tree<String> tree = Tree
-            .<String>tree( STRING( "d1", CONTAINS ) )
+            .<String>tree( STRING( "d1", CONTAINS, false ) )
+            .withHashFillFactor( 1 )
+            .load( l( v( "1", "s1" ), v( "2", "s2" ), v( "3", "s3" ), v( "33", "s3" ) ) );
+
+        System.out.println( tree.toString() );
+
+        assertThat( tree.find( l( "s1" ) ) ).containsOnly( "1" );
+        assertThat( tree.find( l( "s2" ) ) ).containsOnly( "2" );
+        assertThat( tree.find( l( "s3" ) ) ).containsOnly( "3", "33" );
+
+        assertThat( tree.find( l( "s4" ) ) ).isEmpty();
+
+        assertThat( tree.getMaxDepth() ).isEqualTo( 3 );
+    }
+
+    @Test
+    public void testStringPreFilter() {
+        final Tree<String> tree = Tree
+            .<String>tree( STRING( "d1", CONTAINS, true ) )
             .withHashFillFactor( 1 )
             .load( l( v( "1", "s1" ), v( "2", "s2" ), v( "3", "s3" ), v( "33", "s3" ) ) );
 
@@ -347,7 +365,7 @@ public class TreeTest {
     @Test
     public void testFindOptionalString() {
         final Tree<String> tree = Tree
-            .<String>tree( STRING( "d1", CONTAINS ) )
+            .<String>tree( STRING( "d1", CONTAINS, false ) )
             .withHashFillFactor( 1 )
             .load( l(
                 v( "1", "s1" ),
@@ -366,7 +384,7 @@ public class TreeTest {
     @Test
     public void testOptionalData() {
         final Tree<String> tree = Tree
-            .<String>tree( STRING( "d1", CONTAINS ) )
+            .<String>tree( STRING( "d1", CONTAINS, false ) )
             .withHashFillFactor( 1 )
             .load( l( v( "1", Optional.of( "s1" ) ), v( "2", Optional.empty() ) ) );
 
@@ -379,7 +397,7 @@ public class TreeTest {
     @Test
     public void testNullData() {
         final Tree<String> tree = Tree
-            .<String>tree( STRING( "d1", CONTAINS ) )
+            .<String>tree( STRING( "d1", CONTAINS, false ) )
             .withHashFillFactor( 1 )
             .load( l( v( "1", "s1" ), v( "2", ( Object ) null ) ) );
 

@@ -110,11 +110,39 @@ public class TreeTraceTest {
     }
 
     @Test
+    public void testTracePreFilter() {
+        var tree = Tree
+                .<String>tree(STRING("d1", CONTAINS, true), STRING("d2", CONTAINS, true))
+                .load(l(v("1", "1", "1"), 
+                        v("2", "2", "1"), 
+                        v("3", "1", "1"), 
+                        v("33", "1", "2")));
+
+        System.out.println(tree.toString());
+
+        assertString(tree.trace(l("1", "1"))).isEqualTo(""
+                + "query = [d1:1,d2:1]\n" +
+                "Expecting:\n" +
+                "33: \n" +
+                "    d2/1: [2] CONTAINS 1\n" +
+                "2: \n" +
+                "    d1/0: [2] CONTAINS 1");
+
+        assertString(tree.trace(l("1", "5"))).isEqualTo(""
+                + "query = [d1:1,d2:5]\n" +
+                "Tree Prefilters:\n" +
+                "  Dimension: d2, q: 5\n");
+    }
+
+    @Test
     public void testTraceHash() {
         var tree = Tree
                 .<String>tree(LONG("d1", CONTAINS, null), ENUM("d2", TestEnum.class, CONTAINS, 0, UNKNOWN, false))
                 .withHashFillFactor(0)
-                .load(l(v("1", 1L, Test1), v("2", 2L, Test2), v("3", 1L, Test3), v("33", 1L, Test3)));
+                .load(l(v("1", 1L, Test1), 
+                        v("2", 2L, Test2), 
+                        v("3", 1L, Test3), 
+                        v("33", 1L, Test3)));
 
         System.out.println(tree.toString());
 
@@ -169,7 +197,7 @@ public class TreeTraceTest {
     @Test
     public void testTraceUNKNOWN() {
         var tree = Tree
-                .<String>tree(STRING("d1", CONTAINS))
+                .<String>tree(STRING("d1", CONTAINS, false))
                 .withHashFillFactor(1)
                 .load(l(v("1", "str")));
 
