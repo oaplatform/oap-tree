@@ -27,12 +27,12 @@ package oap.tree;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 import oap.tree.Dimension.OperationType;
-import oap.util.*;
+import oap.util.Lists;
+import oap.util.Pair;
+import oap.util.Stream;
+import oap.util.Strings;
 import org.apache.commons.lang3.ArrayUtils;
 
-import java.util.Arrays;
-import java.util.BitSet;
-import java.util.Collections;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
@@ -54,7 +54,6 @@ public class Tree<T> {
     private boolean preFilter;
     private List<Dimension> dimensions;
     private double hashFillFactor;
-    private long memory;
     private long nodeCount = 0;
     private long leafCount = 0;
 
@@ -102,10 +101,6 @@ public class Tree<T> {
         return Collections.unmodifiableList(preFilters);
     }
 
-    public long getMemory() {
-        return memory;
-    }
-
     public long getNodeCount() {
         return nodeCount;
     }
@@ -150,8 +145,6 @@ public class Tree<T> {
         root = toNode(newData, uniqueCount, new BitSet(dimensions.size()));
 
         updateCount(root);
-
-        memory = MemoryMeter.get().measureDeep(this);
 
         this.preFilters.clear();
         for (var i = 0; i < dimensions.size(); i++) {
