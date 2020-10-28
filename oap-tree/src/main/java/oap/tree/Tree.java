@@ -97,6 +97,10 @@ public class Tree<T> {
         return preFilter;
     }
 
+    public void setPreFilter(boolean preFilter) {
+        this.preFilter = preFilter;
+    }
+
     public List<PreFilter> getPreFilters() {
         return Collections.unmodifiableList(preFilters);
     }
