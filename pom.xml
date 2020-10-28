@@ -60,7 +60,7 @@
         <maven.compiler.source>15</maven.compiler.source>
         <maven.compiler.target>15</maven.compiler.target>
 
-        <revision>3.1.0</revision>
+        <revision>3.1.1</revision>
 
         <oap.version>8.0.13</oap.version>
         <lombok.version>1.18.14</lombok.version>

@@ -49,7 +49,7 @@ import static oap.util.Pair.__;
 
 public class Tree<T> {
     private final int maxTraceListCount;
-    private final ArrayList<PreFilter> preFileters = new ArrayList<>();
+    private final ArrayList<PreFilter> preFilters = new ArrayList<>();
     TreeNode<T> root = new Leaf<>(emptyList());
     private boolean preFilter;
     private List<Dimension> dimensions;
@@ -94,6 +94,14 @@ public class Tree<T> {
         return new Array(l(values), operationType);
     }
 
+    public boolean isPreFilter() {
+        return preFilter;
+    }
+
+    public List<PreFilter> getPreFilters() {
+        return Collections.unmodifiableList(preFilters);
+    }
+
     public long getMemory() {
         return memory;
     }
@@ -107,7 +115,7 @@ public class Tree<T> {
     }
 
     public TreeArrayStatistic getArrayStatistics() {
-        final TreeArrayStatistic tas = new TreeArrayStatistic();
+        var tas = new TreeArrayStatistic();
 
         arrayStatistics(root, tas);
 
@@ -118,7 +126,7 @@ public class Tree<T> {
         if (root == null) return;
 
         if (root instanceof Tree.Node) {
-            final List<ArrayBitSet> sets = ((Node) root).sets;
+            var sets = ((Node) root).sets;
 
             tas.update(ArrayOperation.OR, Lists.count(sets, s -> s.operation == ArrayOperation.OR));
             tas.update(ArrayOperation.AND, Lists.count(sets, s -> s.operation == ArrayOperation.AND));
@@ -138,14 +146,14 @@ public class Tree<T> {
     public void load(List<ValueData<T>> data) {
         var newData = fixEmptyAsFailed(data);
         init(newData);
-        final long[] uniqueCount = getUniqueCount(newData);
+        var uniqueCount = getUniqueCount(newData);
         root = toNode(newData, uniqueCount, new BitSet(dimensions.size()));
 
         updateCount(root);
 
         memory = MemoryMeter.get().measureDeep(this);
 
-        this.preFileters.clear();
+        this.preFilters.clear();
         for (var i = 0; i < dimensions.size(); i++) {
             var dimension = dimensions.get(i);
             if (!dimension.preFilter) continue;
@@ -153,8 +161,13 @@ public class Tree<T> {
 
             var res = new ArrayList<>();
 
+            var ok = true;
             for (var v : data) {
                 var dv = v.data.get(i);
+                if (dv == null) {
+                    ok = false;
+                    break;
+                }
                 if (dv instanceof Collection) {
                     res.addAll((Collection<?>) dv);
                 } else {
@@ -162,12 +175,14 @@ public class Tree<T> {
                 }
             }
 
-            var bs = dimension.toBitSet(res);
+            if (ok) {
+                var bs = dimension.toBitSet(res);
 
-            this.preFileters.add(new PreFilter(dimension, i, bs));
+                this.preFilters.add(new PreFilter(dimension, i, bs));
+            }
         }
 
-        this.preFilter = !this.preFileters.isEmpty();
+        this.preFilter = !this.preFilters.isEmpty();
     }
 
     private List<ValueData<T>> fixEmptyAsFailed(List<ValueData<T>> data) {
@@ -177,12 +192,12 @@ public class Tree<T> {
 
         next:
         for (var vd : data) {
-            for (int i = 0; i < dimensions.size(); i++) {
+            for (var i = 0; i < dimensions.size(); i++) {
                 if (!dimensions.get(i).emptyAsFailed) continue;
 
                 var v = vd.data.get(i);
                 if (v == null) break next;
-                if (v instanceof Optional && ((Optional) v).isEmpty()) break next;
+                if (v instanceof Optional && ((Optional<?>) v).isEmpty()) break next;
                 if (v instanceof Array && ((Array) v).isEmpty()) break next;
             }
             res.add(vd);
@@ -218,7 +233,6 @@ public class Tree<T> {
         }
     }
 
-    @SuppressWarnings("unchecked")
     private void init(List<ValueData<T>> data) {
         for (int i = 0; i < dimensions.size(); i++) {
             var p = dimensions.get(i);
@@ -246,9 +260,9 @@ public class Tree<T> {
 
         if (splitDimension == null) return new Leaf<>(Lists.map(data, sd -> sd.value));
 
-        final BitSet bitSetWithDimension = withSet(eq, splitDimension.dimension);
+        var bitSetWithDimension = withSet(eq, splitDimension.dimension);
 
-        final Dimension dimension = dimensions.get(splitDimension.dimension);
+        var dimension = dimensions.get(splitDimension.dimension);
 
 
         if (splitDimension.hash.isEmpty()) {
@@ -392,7 +406,7 @@ public class Tree<T> {
         var longQuery = Dimension.convertQueryToLong(dimensions, query);
 
         if (preFilter) {
-            for (var pd : preFileters) {
+            for (var pd : preFilters) {
                 var vals = longQuery[pd.index];
                 var found = false;
                 for (var v : vals) {
@@ -478,7 +492,7 @@ public class Tree<T> {
 
         var outPF = new StringBuilder();
         if (preFilter) {
-            for (var pd : preFileters) {
+            for (var pd : preFilters) {
                 var vals = longQuery[pd.index];
                 var found = false;
                 for (var v : vals) {
@@ -901,27 +915,26 @@ public class Tree<T> {
 
         public final boolean find(long[] qValue) {
             switch (operation) {
-                case OR:
+                case OR -> {
                     for (long value : qValue) {
                         if (bitSet.get((int) value)) return true;
                     }
-
                     return false;
-                case AND:
+                }
+                case AND -> {
                     var newBitSet = (BitSet) bitSet.clone();
                     for (long value : qValue) {
                         newBitSet.clear((int) value);
                     }
-
                     return newBitSet.isEmpty();
-                case NOT:
+                }
+                case NOT -> {
                     for (long value : qValue) {
                         if (bitSet.get((int) value)) return false;
                     }
-
                     return true;
-                default:
-                    throw new IllegalStateException("Unknown Operation type " + operation.name());
+                }
+                default -> throw new IllegalStateException("Unknown Operation type " + operation.name());
             }
         }
     }

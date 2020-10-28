@@ -244,7 +244,8 @@ public class TreeArrayTest {
     @Test
     public void testEmptyFailed() {
         final Tree<String> tree = Tree
-                .<String>tree(ARRAY_STRING("d1", true, false), ARRAY_STRING("d2", true, false))
+                .<String>tree(ARRAY_STRING("d1", true, false), 
+                        ARRAY_STRING("d2", true, false))
                 .load(l(
                         v("1", l(a(OR, 1L), a(NOT))),
                         v("2", l(a(NOT), a(OR, 2L)))
