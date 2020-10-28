@@ -112,7 +112,9 @@ public class TreeTraceTest {
     @Test
     public void testTracePreFilter() {
         var tree = Tree
-                .<String>tree(STRING("d1", CONTAINS, true), STRING("d2", CONTAINS, true))
+                .<String>tree(
+                        STRING("d1", CONTAINS, true), 
+                        STRING("d2", CONTAINS, true))
                 .load(l(v("1", "1", "1"), 
                         v("2", "2", "1"), 
                         v("3", "1", "1"), 

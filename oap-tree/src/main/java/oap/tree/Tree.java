@@ -412,7 +412,8 @@ public class Tree<T> {
                 var vals = longQuery[pd.index];
                 var found = false;
                 for (var v : vals) {
-                    if (pd.bitSet.get(v) || !pd.notBitSet.get(v)) {
+                    if ((pd.bitSet.isEmpty() || pd.bitSet.get(v))
+                            && (pd.notBitSet.isEmpty() || !pd.notBitSet.get(v))) {
                         found = true;
                         break;
                     }
@@ -501,7 +502,8 @@ public class Tree<T> {
                 var vals = longQuery[pd.index];
                 var found = false;
                 for (var v : vals) {
-                    if (pd.bitSet.get(v) || !pd.notBitSet.get(v)) {
+                    if ((pd.bitSet.isEmpty() || pd.bitSet.get(v))
+                            && (pd.notBitSet.isEmpty() || !pd.notBitSet.get(v))) {
                         found = true;
                         break;
                     }
