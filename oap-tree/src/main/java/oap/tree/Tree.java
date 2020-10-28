@@ -41,7 +41,6 @@ import java.util.stream.LongStream;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
-import static java.util.List.of;
 import static java.util.stream.Collectors.*;
 import static oap.tree.Consts.ANY_AS_ARRAY;
 import static oap.tree.Dimension.Direction;
@@ -79,7 +78,7 @@ public class Tree<T> {
     }
 
     public static <T> ValueData<T> v(T selection, Object... data) {
-        return v(selection, of(data));
+        return v(selection, asList(data));
     }
 
     public static <T> TreeBuilder<T> tree(List<Dimension> dimensions) {
