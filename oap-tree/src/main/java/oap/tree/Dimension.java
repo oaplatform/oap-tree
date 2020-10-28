@@ -24,6 +24,8 @@
 
 package oap.tree;
 
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Metrics;
 import lombok.EqualsAndHashCode;
 import lombok.NonNull;
 import oap.util.StringBits;
@@ -43,6 +45,7 @@ public abstract class Dimension {
     public final long[] nullAsLong;
     public final boolean emptyAsFailed;
     public final boolean preFilter;
+    public final Counter preFilterRejectCounter;
     public OperationType operationType;
 
     public Dimension(@NonNull String name, OperationType operationType, int priority, long[] nullAsLong,
@@ -53,6 +56,8 @@ public abstract class Dimension {
         this.nullAsLong = nullAsLong;
         this.emptyAsFailed = emptyAsFailed;
         this.preFilter = preFilter;
+
+        preFilterRejectCounter = Metrics.counter("tree.prefilter", "name", name, "type", "reject");
     }
 
     public static <T extends Enum> Dimension ARRAY_ENUM(String name, Class<T> clazz, T nullValue, boolean emptyAsFailed) {

@@ -416,7 +416,10 @@ public class Tree<T> {
                     }
                 }
 
-                if (!found) return Set.of();
+                if (!found) {
+                    pd.dimension.preFilterRejectCounter.increment();
+                    return Set.of();
+                }
             }
         }
 
