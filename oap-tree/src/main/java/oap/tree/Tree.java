@@ -153,6 +153,7 @@ public class Tree<T> {
 
 
             var res = new ArrayList<>();
+            var notRes = new ArrayList<>();
 
             var ok = true;
             for (var v : data) {
@@ -164,8 +165,12 @@ public class Tree<T> {
                     ok = false;
                     break;
                 }
-                if (dv instanceof Collection) {
-                    res.addAll((Collection<?>) dv);
+                if (dv instanceof Array) {
+                    if (((Array) dv).operation == ArrayOperation.NOT) {
+                        notRes.addAll((Collection<?>) dv);
+                    } else {
+                        res.addAll((Collection<?>) dv);
+                    }
                 } else {
                     res.add(dv);
                 }
@@ -173,8 +178,9 @@ public class Tree<T> {
 
             if (ok) {
                 var bs = dimension.toBitSet(res);
+                var notBs = dimension.toBitSet(notRes);
 
-                this.preFilters.add(new PreFilter(dimension, i, bs));
+                this.preFilters.add(new PreFilter(dimension, i, bs, notBs));
             }
         }
 
@@ -406,7 +412,7 @@ public class Tree<T> {
                 var vals = longQuery[pd.index];
                 var found = false;
                 for (var v : vals) {
-                    if (pd.bitSet.get(v)) {
+                    if (pd.bitSet.get(v) || !pd.notBitSet.get(v)) {
                         found = true;
                         break;
                     }
@@ -495,7 +501,7 @@ public class Tree<T> {
                 var vals = longQuery[pd.index];
                 var found = false;
                 for (var v : vals) {
-                    if (pd.bitSet.get(v)) {
+                    if (pd.bitSet.get(v) || !pd.notBitSet.get(v)) {
                         found = true;
                         break;
                     }
@@ -761,11 +767,13 @@ public class Tree<T> {
         public final Dimension dimension;
         public final int index;
         public final oap.util.BitSet bitSet;
+        public final oap.util.BitSet notBitSet;
 
-        public PreFilter(Dimension dimension, int index, oap.util.BitSet bitSet) {
+        public PreFilter(Dimension dimension, int index, oap.util.BitSet bitSet, oap.util.BitSet notBitSet) {
             this.dimension = dimension;
             this.index = index;
             this.bitSet = bitSet;
+            this.notBitSet = notBitSet;
         }
     }
 

@@ -25,6 +25,7 @@
 package oap.tree;
 
 import oap.util.Sets;
+import oap.util.Strings;
 import org.testng.annotations.Test;
 
 import java.util.Set;
@@ -111,18 +112,7 @@ public class TreeArrayTest {
 
         assertThat(tree.find(l("s1"))).containsOnly("1");
         assertThat(tree.find(l("s5"))).isEmpty();
-    }
-
-    @Test
-    public void testArrayStringPreFilter() {
-        final Tree<String> tree = Tree
-                .<String>tree(ARRAY_STRING("d1", true))
-                .load(l(v("1", l(a(OR, "s1", "s2")))));
-
-        System.out.println(tree.toString());
-
-        assertThat(tree.find(l("s1"))).containsOnly("1");
-        assertThat(tree.find(l("s5"))).isEmpty();
+        assertThat(tree.find(l((String) null))).isEmpty();
     }
 
     @Test
@@ -162,6 +152,23 @@ public class TreeArrayTest {
         assertThat(tree.find(l(l(1L, 3L)))).containsOnly("2");
 
         assertThat(tree.find(l(l(5L, 6L)))).containsOnly("1", "2");
+    }
+
+    @Test
+    public void testArrayQueryForArrayExcludePreFilter() {
+        final Tree<String> tree = Tree
+                .<String>tree(ARRAY_STRING("d1",  true))
+                .load(l(
+                        v("1", l(a(NOT, "1", "2"))),
+                        v("2", l(a(NOT, "2")))
+                ));
+
+        System.out.println(tree.toString());
+
+        assertThat(tree.find(l(l("3", "2")))).isEmpty();
+        assertThat(tree.find(l(l("1", "3")))).containsOnly("2");
+
+        assertThat(tree.find(l(l("5", "6")))).containsOnly("1", "2");
     }
 
     @Test
@@ -244,11 +251,11 @@ public class TreeArrayTest {
     @Test
     public void testEmptyFailed() {
         final Tree<String> tree = Tree
-                .<String>tree(ARRAY_STRING("d1", true, false), 
+                .<String>tree(ARRAY_STRING("d1", true, false),
                         ARRAY_STRING("d2", true, false))
                 .load(l(
-                        v("1", l(a(OR, 1L), a(NOT))),
-                        v("2", l(a(NOT), a(OR, 2L)))
+                        v("1", l(a(OR, "1"), a(NOT))),
+                        v("2", l(a(NOT), a(OR, "2")))
                 ));
 
         System.out.println(tree.toString());
