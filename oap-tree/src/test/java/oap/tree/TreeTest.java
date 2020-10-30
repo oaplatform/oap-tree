@@ -255,6 +255,7 @@ public class TreeTest {
         final Tree<String> tree = Tree
                 .<String>tree(STRING("d1", CONTAINS, true))
                 .withHashFillFactor(1)
+                .withPreFilters(true)
                 .load(l(v("1", "s1"),
                         v("2", "s2"),
                         v("3", "s3"),
@@ -276,6 +277,7 @@ public class TreeTest {
         final Tree<String> tree = Tree
                 .<String>tree(STRING("d1", CONTAINS, true))
                 .withHashFillFactor(1)
+                .withPreFilters(true)
                 .load(l(v("1", "s1"),
                         v("2", "s2"),
                         v("3", "s3"),

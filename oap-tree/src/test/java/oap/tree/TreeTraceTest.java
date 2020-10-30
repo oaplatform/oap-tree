@@ -115,6 +115,7 @@ public class TreeTraceTest {
                 .<String>tree(
                         STRING("d1", CONTAINS, true), 
                         STRING("d2", CONTAINS, true))
+                .withPreFilters(true)
                 .load(l(v("1", "1", "1"), 
                         v("2", "2", "1"), 
                         v("3", "1", "1"), 

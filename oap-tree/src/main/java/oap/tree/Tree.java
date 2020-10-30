@@ -57,14 +57,15 @@ public class Tree<T> {
     private long nodeCount = 0;
     private long leafCount = 0;
 
-    Tree(List<Dimension> dimensions) {
-        this(dimensions, 0.25, 10);
+    Tree(List<Dimension> dimensions, boolean preFilter) {
+        this(dimensions, 0.25, 10, preFilter);
     }
 
-    Tree(List<Dimension> dimensions, double hashFillFactor, int maxTraceListCount) {
+    Tree(List<Dimension> dimensions, double hashFillFactor, int maxTraceListCount, boolean preFilter) {
         this.dimensions = dimensions;
         this.hashFillFactor = hashFillFactor;
         this.maxTraceListCount = maxTraceListCount;
+        this.preFilter = preFilter;
     }
 
     public static <T> ValueData<T> v(T selection, List<?> data) {
@@ -150,45 +151,45 @@ public class Tree<T> {
 
         updateCount(root);
 
-        this.preFilters.clear();
-        for (var i = 0; i < dimensions.size(); i++) {
-            var dimension = dimensions.get(i);
-            if (!dimension.preFilter) continue;
+        if (preFilter) {
+            this.preFilters.clear();
+            for (var i = 0; i < dimensions.size(); i++) {
+                var dimension = dimensions.get(i);
+                if (!dimension.preFilter) continue;
 
 
-            var res = new ArrayList<>();
-            var notRes = new ArrayList<>();
+                var res = new ArrayList<>();
+                var notRes = new ArrayList<>();
 
-            var ok = true;
-            for (var v : data) {
-                var dv = v.data.get(i);
-                if (dv == null
-                        || (dv instanceof Optional<?> && ((Optional<?>) dv).isEmpty())
-                        || (dv instanceof Collection<?> && ((Collection<?>) dv).isEmpty())
-                ) {
-                    ok = false;
-                    break;
-                }
-                if (dv instanceof Array) {
-                    if (((Array) dv).operation == ArrayOperation.NOT) {
-                        notRes.addAll((Collection<?>) dv);
-                    } else {
-                        res.addAll((Collection<?>) dv);
+                var ok = true;
+                for (var v : data) {
+                    var dv = v.data.get(i);
+                    if (dv == null
+                            || (dv instanceof Optional<?> && ((Optional<?>) dv).isEmpty())
+                            || (dv instanceof Collection<?> && ((Collection<?>) dv).isEmpty())
+                    ) {
+                        ok = false;
+                        break;
                     }
-                } else {
-                    res.add(dv);
+                    if (dv instanceof Array) {
+                        if (((Array) dv).operation == ArrayOperation.NOT) {
+                            notRes.addAll((Collection<?>) dv);
+                        } else {
+                            res.addAll((Collection<?>) dv);
+                        }
+                    } else {
+                        res.add(dv);
+                    }
                 }
-            }
 
-            if (ok) {
-                var bs = dimension.toBitSet(res);
-                var notBs = dimension.toBitSet(notRes);
+                if (ok) {
+                    var bs = dimension.toBitSet(res);
+                    var notBs = dimension.toBitSet(notRes);
 
-                this.preFilters.add(new PreFilter(dimension, i, bs, notBs));
+                    this.preFilters.add(new PreFilter(dimension, i, bs, notBs));
+                }
             }
         }
-
-        this.preFilter = !this.preFilters.isEmpty();
     }
 
     private List<ValueData<T>> fixEmptyAsFailed(List<ValueData<T>> data) {

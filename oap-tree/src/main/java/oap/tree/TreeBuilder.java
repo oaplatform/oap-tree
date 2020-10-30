@@ -30,6 +30,7 @@ public class TreeBuilder<T> {
     private List<Dimension> dimensions;
     private double hashFillFactor = 0.25;
     private int maxTraceListCount = 10;
+    private boolean preFilters = false;
 
     public TreeBuilder(List<Dimension> dimensions) {
         this.dimensions = dimensions;
@@ -40,15 +41,21 @@ public class TreeBuilder<T> {
 
         return this;
     }
-
+    
     public TreeBuilder<T> withMaxTraceListCount(int maxTraceListCount) {
         this.maxTraceListCount = maxTraceListCount;
 
         return this;
     }
 
+    public TreeBuilder<T> withPreFilters( boolean preFilters ) {
+        this.preFilters = preFilters;
+
+        return this;
+    }
+
     public final Tree<T> load(List<Tree.ValueData<T>> data) {
-        var tree = new Tree<T>(dimensions, hashFillFactor, maxTraceListCount);
+        var tree = new Tree<T>(dimensions, hashFillFactor, maxTraceListCount, preFilters);
         tree.load(data);
 
         return tree;

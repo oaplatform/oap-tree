@@ -25,7 +25,6 @@
 package oap.tree;
 
 import oap.util.Sets;
-import oap.util.Strings;
 import org.testng.annotations.Test;
 
 import java.util.Set;
@@ -157,7 +156,8 @@ public class TreeArrayTest {
     @Test
     public void testArrayQueryForArrayExcludePreFilter() {
         final Tree<String> tree = Tree
-                .<String>tree(ARRAY_STRING("d1",  true))
+                .<String>tree(ARRAY_STRING("d1", true))
+                .withPreFilters(true)
                 .load(l(
                         v("1", l(a(NOT, "1", "2"))),
                         v("2", l(a(NOT, "2")))
