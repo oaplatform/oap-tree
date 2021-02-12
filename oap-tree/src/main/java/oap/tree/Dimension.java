@@ -76,8 +76,12 @@ public abstract class Dimension {
         preFilterRejectCounter = Metrics.counter("tree.prefilter", "name", name, "type", "reject");
     }
 
+    public static <T extends Enum> Dimension ARRAY_ENUM(String name, Class<T> clazz, T nullValue, boolean emptyAsFailed, String groupName) {
+        return ENUM(name, clazz, null, PRIORITY_DEFAULT, nullValue, emptyAsFailed, groupName);
+    }
+
     public static <T extends Enum> Dimension ARRAY_ENUM(String name, Class<T> clazz, T nullValue, boolean emptyAsFailed) {
-        return ENUM(name, clazz, null, PRIORITY_DEFAULT, nullValue, false);
+        return ENUM(name, clazz, null, PRIORITY_DEFAULT, nullValue, emptyAsFailed);
     }
 
     public static <T extends Enum> Dimension ARRAY_ENUM(String name, Class<T> clazz, T nullValue) {
@@ -130,6 +134,10 @@ public abstract class Dimension {
 
     public static Dimension ARRAY_STRING(String name, boolean emptyAsFailed, boolean preFilter) {
         return STRING(name, null, PRIORITY_DEFAULT, emptyAsFailed, preFilter);
+    }
+
+    public static Dimension ARRAY_STRING(String name, boolean emptyAsFailed, int initialCapacity, float loadFactor, boolean preFilter, String groupName) {
+        return STRING(name, null, PRIORITY_DEFAULT, emptyAsFailed, initialCapacity, loadFactor, preFilter, groupName);
     }
 
     public static Dimension ARRAY_STRING(String name, boolean emptyAsFailed, int initialCapacity, float loadFactor, boolean preFilter) {
@@ -188,6 +196,10 @@ public abstract class Dimension {
         return LONG(name, null, PRIORITY_DEFAULT, nullValue, emptyAsFailed);
     }
 
+    public static Dimension ARRAY_LONG(String name, Long nullValue, boolean emptyAsFailed, String groupName) {
+        return LONG(name, null, PRIORITY_DEFAULT, nullValue, emptyAsFailed, groupName);
+    }
+
     public static Dimension LONG(String name, OperationType operationType, Long nullValue) {
         return LONG(name, operationType, PRIORITY_DEFAULT, nullValue, false);
     }
@@ -227,6 +239,10 @@ public abstract class Dimension {
 
     public static Dimension ARRAY_BOOLEAN(String name, Boolean nullValue, boolean emptyAsFailed) {
         return BOOLEAN(name, null, PRIORITY_DEFAULT, nullValue, emptyAsFailed);
+    }
+
+    public static Dimension ARRAY_BOOLEAN(String name, Boolean nullValue, boolean emptyAsFailed, String groupName) {
+        return BOOLEAN(name, null, PRIORITY_DEFAULT, nullValue, emptyAsFailed, groupName);
     }
 
     public static Dimension BOOLEAN(String name, OperationType operationType, Boolean nullValue) {
