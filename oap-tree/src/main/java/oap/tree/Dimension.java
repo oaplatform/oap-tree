@@ -37,8 +37,8 @@ import static oap.tree.Consts.ANY_AS_ARRAY;
 @EqualsAndHashCode
 public abstract class Dimension {
     public static final int PRIORITY_DEFAULT = 0;
+    public static final String EMPTY = "";
     public static final int PRIORITY_LOW = Integer.MIN_VALUE;
-
 
     public final String name;
     public final int priority;
@@ -47,8 +47,9 @@ public abstract class Dimension {
     public final boolean preFilter;
     public final Counter preFilterRejectCounter;
     public OperationType operationType;
-    public String groupName;
+    public final String groupName;
 
+    @Deprecated
     public Dimension(@NonNull String name, OperationType operationType, int priority, long[] nullAsLong,
                      boolean emptyAsFailed, boolean preFilter) {
         this.name = name;
@@ -57,6 +58,7 @@ public abstract class Dimension {
         this.nullAsLong = nullAsLong;
         this.emptyAsFailed = emptyAsFailed;
         this.preFilter = preFilter;
+        this.groupName = EMPTY;
 
         preFilterRejectCounter = Metrics.counter("tree.prefilter", "name", name, "type", "reject");
     }
@@ -87,6 +89,10 @@ public abstract class Dimension {
     }
 
     public static <T extends Enum> Dimension ENUM(String name, Class<T> clazz, OperationType operationType, int priority, T nullValue, boolean emptyAsFailed) {
+        return ENUM(name, clazz, operationType, priority, nullValue, emptyAsFailed, EMPTY);
+    }
+
+    public static <T extends Enum> Dimension ENUM(String name, Class<T> clazz, OperationType operationType, int priority, T nullValue, boolean emptyAsFailed, String groupName ) {
         var enumConstantsSortedByName = clazz.getEnumConstants();
         Arrays.sort(enumConstantsSortedByName, Comparator.comparing(Enum::name));
 
@@ -99,7 +105,7 @@ public abstract class Dimension {
         }
 
         return new Dimension(name, operationType, priority,
-                nullValue == null ? ANY_AS_ARRAY : new long[]{ordinalToSorted[nullValue.ordinal()]}, emptyAsFailed, false) {
+                nullValue == null ? ANY_AS_ARRAY : new long[]{ordinalToSorted[nullValue.ordinal()]}, emptyAsFailed, false, groupName) {
             @Override
             public String toString(long value) {
                 return sortedToName[(int) value];
@@ -143,9 +149,13 @@ public abstract class Dimension {
     }
 
     public static Dimension STRING(String name, OperationType operationType, int priority, boolean emptyAsFailed, int initialCapacity, float loadFactor, boolean preFilter) {
+        return STRING(name, operationType, priority, emptyAsFailed, initialCapacity, loadFactor, preFilter, EMPTY);
+    }
+
+    public static Dimension STRING(String name, OperationType operationType, int priority, boolean emptyAsFailed, int initialCapacity, float loadFactor, boolean preFilter, String groupName) {
         var bits = new StringBits(initialCapacity, loadFactor);
 
-        return new Dimension(name, operationType, priority, new long[]{StringBits.UNKNOWN}, emptyAsFailed, preFilter) {
+        return new Dimension(name, operationType, priority, new long[]{StringBits.UNKNOWN}, emptyAsFailed, preFilter, groupName) {
             @Override
             public String toString(long value) {
                 return bits.valueOf(value);
@@ -183,8 +193,12 @@ public abstract class Dimension {
     }
 
     public static Dimension LONG(String name, OperationType operationType, int priority, Long nullValue, boolean emptyAsFailed) {
+        return LONG(name, operationType, priority, nullValue, emptyAsFailed, EMPTY);
+    }
+
+    public static Dimension LONG(String name, OperationType operationType, int priority, Long nullValue, boolean emptyAsFailed, String groupName) {
         return new Dimension(name, operationType, priority,
-                nullValue == null ? ANY_AS_ARRAY : new long[]{nullValue}, emptyAsFailed, false) {
+                nullValue == null ? ANY_AS_ARRAY : new long[]{nullValue}, emptyAsFailed, false, groupName) {
             @Override
             public String toString(long value) {
                 return String.valueOf(value);
@@ -220,9 +234,13 @@ public abstract class Dimension {
     }
 
     public static Dimension BOOLEAN(String name, OperationType operationType, int priority, Boolean nullValue, boolean emptyAsFailed) {
+        return BOOLEAN(name, operationType, priority, nullValue, emptyAsFailed, EMPTY);
+    }
+
+    public static Dimension BOOLEAN(String name, OperationType operationType, int priority, Boolean nullValue, boolean emptyAsFailed, String groupName) {
         var nullAsLong = nullValue == null ? ANY_AS_ARRAY : new long[]{(nullValue ? 1 : 0)};
 
-        return new Dimension(name, operationType, priority, nullAsLong, emptyAsFailed, false) {
+        return new Dimension(name, operationType, priority, nullAsLong, emptyAsFailed, false, groupName) {
             @Override
             public String toString(long value) {
                 return value == 0 ? "false" : "true";
