@@ -47,6 +47,7 @@ public abstract class Dimension {
     public final boolean preFilter;
     public final Counter preFilterRejectCounter;
     public OperationType operationType;
+    public String groupName;
 
     public Dimension(@NonNull String name, OperationType operationType, int priority, long[] nullAsLong,
                      boolean emptyAsFailed, boolean preFilter) {
@@ -56,6 +57,19 @@ public abstract class Dimension {
         this.nullAsLong = nullAsLong;
         this.emptyAsFailed = emptyAsFailed;
         this.preFilter = preFilter;
+
+        preFilterRejectCounter = Metrics.counter("tree.prefilter", "name", name, "type", "reject");
+    }
+
+    public Dimension(@NonNull String name, OperationType operationType, int priority, long[] nullAsLong,
+                     boolean emptyAsFailed, boolean preFilter, String groupName) {
+        this.name = name;
+        this.priority = priority;
+        this.nullAsLong = nullAsLong;
+        this.emptyAsFailed = emptyAsFailed;
+        this.preFilter = preFilter;
+        this.operationType = operationType;
+        this.groupName = groupName;
 
         preFilterRejectCounter = Metrics.counter("tree.prefilter", "name", name, "type", "reject");
     }
