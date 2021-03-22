@@ -33,7 +33,18 @@ import oap.util.Stream;
 import oap.util.Strings;
 import org.apache.commons.lang3.ArrayUtils;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.BitSet;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import java.util.stream.IntStream;
@@ -41,69 +52,75 @@ import java.util.stream.LongStream;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 import static oap.tree.Consts.ANY_AS_ARRAY;
-import static oap.tree.Dimension.Direction;
-import static oap.tree.Dimension.OperationType.*;
+import static oap.tree.Dimension.Direction.EQUAL;
+import static oap.tree.Dimension.Direction.LEFT;
+import static oap.tree.Dimension.Direction.RIGHT;
+import static oap.tree.Dimension.OperationType.CONTAINS;
+import static oap.tree.Dimension.OperationType.CONTAINS_ALL;
+import static oap.tree.Dimension.OperationType.NOT_CONTAINS;
 import static oap.util.Pair.__;
 
 public class Tree<T> {
     private final int maxTraceListCount;
     private final ArrayList<PreFilter> preFilters = new ArrayList<>();
-    TreeNode<T> root = new Leaf<>(emptyList());
+    TreeNode<T> root = new Leaf<>( emptyList() );
     private boolean preFilter;
     private List<Dimension> dimensions;
     private double hashFillFactor;
     private long nodeCount = 0;
     private long leafCount = 0;
 
-    Tree(List<Dimension> dimensions, boolean preFilter) {
-        this(dimensions, 0.25, 10, preFilter);
+    Tree( List<Dimension> dimensions, boolean preFilter ) {
+        this( dimensions, 0.25, 10, preFilter );
     }
 
-    Tree(List<Dimension> dimensions, double hashFillFactor, int maxTraceListCount, boolean preFilter) {
+    Tree( List<Dimension> dimensions, double hashFillFactor, int maxTraceListCount, boolean preFilter ) {
         this.dimensions = dimensions;
         this.hashFillFactor = hashFillFactor;
         this.maxTraceListCount = maxTraceListCount;
         this.preFilter = preFilter;
     }
 
-    public static <T> ValueData<T> v(T selection, List<?> data) {
-        return new ValueData<>(data, selection);
+    public static <T> ValueData<T> v( T selection, Object... data ) {
+        return v( selection, asList( data ) );
+    }
+
+    public static <T> ValueData<T> v( T selection, List<?> data ) {
+        return new ValueData<>( data, selection );
     }
 
     @SafeVarargs
-    public static <T> ArrayList<T> l(T... data) {
-        return Lists.of(data);
+    public static <T> ArrayList<T> l( T... data ) {
+        return Lists.of( data );
     }
 
-    public static <T> ValueData<T> v(T selection, Object... data) {
-        return v(selection, asList(data));
+    public static <T> TreeBuilder<T> tree( List<Dimension> dimensions ) {
+        return new TreeBuilder<>( dimensions );
     }
 
-    public static <T> TreeBuilder<T> tree(List<Dimension> dimensions) {
-        return new TreeBuilder<>(dimensions);
-    }
-
-    public static <T> TreeBuilder<T> tree(Dimension... dimensions) {
-        return new TreeBuilder<>(asList(dimensions));
+    public static <T> TreeBuilder<T> tree( Dimension... dimensions ) {
+        return new TreeBuilder<>( asList( dimensions ) );
     }
 
     @SafeVarargs
-    public static <T> Array a(ArrayOperation operationType, T... values) {
-        return new Array(l(values), operationType);
+    public static <T> Array a( ArrayOperation operationType, T... values ) {
+        return new Array( l( values ), operationType );
     }
 
     public boolean isPreFilter() {
         return preFilter;
     }
 
-    public void setPreFilter(boolean preFilter) {
+    public void setPreFilter( boolean preFilter ) {
         this.preFilter = preFilter;
     }
 
     public List<PreFilter> getPreFilters() {
-        return Collections.unmodifiableList(preFilters);
+        return Collections.unmodifiableList( preFilters );
     }
 
     public long getNodeCount() {
@@ -117,206 +134,206 @@ public class Tree<T> {
     public TreeArrayStatistic getArrayStatistics() {
         var tas = new TreeArrayStatistic();
 
-        arrayStatistics(root, tas);
+        arrayStatistics( root, tas );
 
         return tas;
     }
 
-    private void arrayStatistics(TreeNode<T> root, TreeArrayStatistic tas) {
-        if (root == null) return;
+    private void arrayStatistics( TreeNode<T> root, TreeArrayStatistic tas ) {
+        if( root == null ) return;
 
-        if (root instanceof Tree.Node) {
-            var sets = ((Node) root).sets;
+        if( root instanceof Tree.Node ) {
+            var sets = ( ( Node ) root ).sets;
 
-            tas.update(ArrayOperation.OR, Lists.count(sets, s -> s.operation == ArrayOperation.OR));
-            tas.update(ArrayOperation.AND, Lists.count(sets, s -> s.operation == ArrayOperation.AND));
-            tas.update(ArrayOperation.NOT, Lists.count(sets, s -> s.operation == ArrayOperation.NOT));
+            tas.update( ArrayOperation.OR, Lists.count( sets, s -> s.operation == ArrayOperation.OR ) );
+            tas.update( ArrayOperation.AND, Lists.count( sets, s -> s.operation == ArrayOperation.AND ) );
+            tas.update( ArrayOperation.NOT, Lists.count( sets, s -> s.operation == ArrayOperation.NOT ) );
 
-            sets.forEach(s -> tas.updateSize(s.operation, s.bitSet.stream().count()));
+            sets.forEach( s -> tas.updateSize( s.operation, s.bitSet.stream().count() ) );
 
-            arrayStatistics(((Node) root).any, tas);
-            arrayStatistics(((Node) root).left, tas);
-            arrayStatistics(((Node) root).right, tas);
-            arrayStatistics(((Node) root).equal, tas);
+            arrayStatistics( ( ( Node ) root ).any, tas );
+            arrayStatistics( ( ( Node ) root ).left, tas );
+            arrayStatistics( ( ( Node ) root ).right, tas );
+            arrayStatistics( ( ( Node ) root ).equal, tas );
 
-            sets.forEach(s -> arrayStatistics(s.equal, tas));
+            sets.forEach( s -> arrayStatistics( s.equal, tas ) );
         }
     }
 
-    public void load(List<ValueData<T>> data) {
-        var newData = fixEmptyAsFailed(data);
-        init(newData);
-        var uniqueCount = getUniqueCount(newData);
-        root = toNode(newData, uniqueCount, new BitSet(dimensions.size()));
+    public void load( List<ValueData<T>> data ) {
+        var newData = fixEmptyAsFailed( data );
+        init( newData );
+        var uniqueCount = getUniqueCount( newData );
+        root = toNode( newData, uniqueCount, new BitSet( dimensions.size() ) );
 
-        updateCount(root);
+        updateCount( root );
 
-        if (preFilter) {
+        if( preFilter ) {
             this.preFilters.clear();
-            for (var i = 0; i < dimensions.size(); i++) {
-                var dimension = dimensions.get(i);
-                if (!dimension.preFilter) continue;
+            for( var i = 0; i < dimensions.size(); i++ ) {
+                var dimension = dimensions.get( i );
+                if( !dimension.preFilter ) continue;
 
 
                 var res = new ArrayList<>();
                 var notRes = new ArrayList<>();
 
                 var ok = true;
-                for (var v : data) {
-                    var dv = v.data.get(i);
-                    if (dv == null
-                            || (dv instanceof Optional<?> && ((Optional<?>) dv).isEmpty())
-                            || (dv instanceof Collection<?> && ((Collection<?>) dv).isEmpty())
+                for( var v : data ) {
+                    var dv = v.data.get( i );
+                    if( dv == null
+                        || ( dv instanceof Optional<?> && ( ( Optional<?> ) dv ).isEmpty() )
+                        || ( dv instanceof Collection<?> && ( ( Collection<?> ) dv ).isEmpty() )
                     ) {
                         ok = false;
                         break;
                     }
-                    if (dv instanceof Array) {
-                        if (((Array) dv).operation == ArrayOperation.NOT) {
-                            notRes.addAll((Collection<?>) dv);
+                    if( dv instanceof Array ) {
+                        if( ( ( Array ) dv ).operation == ArrayOperation.NOT ) {
+                            notRes.addAll( ( Collection<?> ) dv );
                         } else {
-                            res.addAll((Collection<?>) dv);
+                            res.addAll( ( Collection<?> ) dv );
                         }
                     } else {
-                        res.add(dv);
+                        res.add( dv );
                     }
                 }
 
-                if (ok) {
-                    var bs = dimension.toBitSet(res);
-                    var notBs = dimension.toBitSet(notRes);
+                if( ok ) {
+                    var bs = dimension.toBitSet( res );
+                    var notBs = dimension.toBitSet( notRes );
 
-                    this.preFilters.add(new PreFilter(dimension, i, bs, notBs));
+                    this.preFilters.add( new PreFilter( dimension, i, bs, notBs ) );
                 }
             }
         }
     }
 
-    private List<ValueData<T>> fixEmptyAsFailed(List<ValueData<T>> data) {
-        if (Lists.find2(dimensions, d -> d.emptyAsFailed) == null) return data;
+    private List<ValueData<T>> fixEmptyAsFailed( List<ValueData<T>> data ) {
+        if( Lists.find2( dimensions, d -> d.emptyAsFailed ) == null ) return data;
 
-        var res = new ArrayList<ValueData<T>>(data.size());
+        var res = new ArrayList<ValueData<T>>( data.size() );
 
         next:
-        for (var vd : data) {
-            for (var i = 0; i < dimensions.size(); i++) {
-                if (!dimensions.get(i).emptyAsFailed) continue;
+        for( var vd : data ) {
+            for( var i = 0; i < dimensions.size(); i++ ) {
+                if( !dimensions.get( i ).emptyAsFailed ) continue;
 
-                var v = vd.data.get(i);
-                if (v == null) break next;
-                if (v instanceof Optional && ((Optional<?>) v).isEmpty()) break next;
-                if (v instanceof Array && ((Array) v).isEmpty()) break next;
+                var v = vd.data.get( i );
+                if( v == null ) break next;
+                if( v instanceof Optional && ( ( Optional<?> ) v ).isEmpty() ) break next;
+                if( v instanceof Array && ( ( Array ) v ).isEmpty() ) break next;
             }
-            res.add(vd);
+            res.add( vd );
         }
 
         return res;
     }
 
-    private long[] getUniqueCount(List<ValueData<T>> data) {
+    private long[] getUniqueCount( List<ValueData<T>> data ) {
         final long[] longs = new long[dimensions.size()];
 
 
-        for (int i = 0; i < longs.length; i++) {
+        for( int i = 0; i < longs.length; i++ ) {
             int finalI = i;
-            longs[i] = data.stream().map(d -> d.data.get(finalI)).distinct().count();
+            longs[i] = data.stream().map( d -> d.data.get( finalI ) ).distinct().count();
         }
         return longs;
     }
 
-    private void updateCount(TreeNode<T> node) {
-        if (node == null) return;
+    private void updateCount( TreeNode<T> node ) {
+        if( node == null ) return;
 
-        if (node instanceof Tree.Node) {
+        if( node instanceof Tree.Node ) {
             nodeCount++;
-            final Node n = (Node) node;
-            updateCount(n.any);
-            updateCount(n.left);
-            updateCount(n.right);
-            updateCount(n.equal);
-            n.sets.forEach(s -> updateCount(s.equal));
+            final Node n = ( Node ) node;
+            updateCount( n.any );
+            updateCount( n.left );
+            updateCount( n.right );
+            updateCount( n.equal );
+            n.sets.forEach( s -> updateCount( s.equal ) );
         } else {
             leafCount++;
         }
     }
 
-    private void init(List<ValueData<T>> data) {
-        for (int i = 0; i < dimensions.size(); i++) {
-            var p = dimensions.get(i);
+    private void init( List<ValueData<T>> data ) {
+        for( int i = 0; i < dimensions.size(); i++ ) {
+            var p = dimensions.get( i );
 
             p.reset();
 
-            for (var dv : data) {
-                var v = dv.data.get(i);
-                if (v instanceof Array) {
-                    for (var item : ((Array) v)) {
-                        p.init(item);
+            for( var dv : data ) {
+                var v = dv.data.get( i );
+                if( v instanceof Array ) {
+                    for( var item : ( Array ) v ) {
+                        p.init( item );
                     }
                 } else {
-                    p.init(v);
+                    p.init( v );
                 }
             }
         }
     }
 
-    @SuppressWarnings("unchecked")
-    private TreeNode<T> toNode(List<ValueData<T>> data, long[] uniqueCount, BitSet eq) {
-        if (data.isEmpty()) return null;
+    @SuppressWarnings( "unchecked" )
+    private TreeNode<T> toNode( List<ValueData<T>> data, long[] uniqueCount, BitSet eq ) {
+        if( data.isEmpty() ) return null;
 
-        final SplitDimension splitDimension = findSplitDimension(data, uniqueCount, eq);
+        final SplitDimension splitDimension = findSplitDimension( data, uniqueCount, eq );
 
-        if (splitDimension == null) return new Leaf<>(Lists.map(data, sd -> sd.value));
+        if( splitDimension == null ) return new Leaf<>( Lists.map( data, sd -> sd.value ) );
 
-        var bitSetWithDimension = withSet(eq, splitDimension.dimension);
+        var bitSetWithDimension = withSet( eq, splitDimension.dimension );
 
-        var dimension = dimensions.get(splitDimension.dimension);
+        var dimension = dimensions.get( splitDimension.dimension );
 
 
-        if (splitDimension.hash.isEmpty()) {
-            var sets = Lists.map(Lists.groupBy(
-                    splitDimension.sets,
-                    s -> s.data.get(splitDimension.dimension)
+        if( splitDimension.hash.isEmpty() ) {
+            var sets = Lists.map( Lists.groupBy(
+                splitDimension.sets,
+                s -> s.data.get( splitDimension.dimension )
             ).entrySet(), es -> {
-                var key = (Array) es.getKey();
-                return new ArrayBitSet(dimension.toBitSet(key), key.operation, toNode(es.getValue(), uniqueCount, bitSetWithDimension));
-            });
+                var key = ( Array ) es.getKey();
+                return new ArrayBitSet( dimension.toBitSet( key ), key.operation, toNode( es.getValue(), uniqueCount, bitSetWithDimension ) );
+            } );
 
             return new Node(
-                    splitDimension.dimension,
-                    splitDimension.value,
-                    toNode(splitDimension.left, uniqueCount, eq),
-                    toNode(splitDimension.right, uniqueCount, eq),
-                    toNode(splitDimension.equal, uniqueCount, bitSetWithDimension),
-                    toNode(splitDimension.any, uniqueCount, bitSetWithDimension),
-                    sets
+                splitDimension.dimension,
+                splitDimension.value,
+                toNode( splitDimension.left, uniqueCount, eq ),
+                toNode( splitDimension.right, uniqueCount, eq ),
+                toNode( splitDimension.equal, uniqueCount, bitSetWithDimension ),
+                toNode( splitDimension.any, uniqueCount, bitSetWithDimension ),
+                sets
             );
         } else {
 
-            var map = Lists.groupBy(splitDimension.hash,
-                    d -> (int) dimension.getOrDefault(d.data.get(splitDimension.dimension), ANY_AS_ARRAY)[0]);
+            var map = Lists.groupBy( splitDimension.hash,
+                d -> ( int ) dimension.getOrDefault( d.data.get( splitDimension.dimension ), ANY_AS_ARRAY )[0] );
 
-            var max = Collections.max(map.keySet());
+            var max = Collections.max( map.keySet() );
 
             var array = new TreeNode[max + 1];
-            Arrays.fill(array, null);
+            Arrays.fill( array, null );
 
-            map.forEach((p, l) -> array[p] = toNode(l, uniqueCount, bitSetWithDimension));
+            map.forEach( ( p, l ) -> array[p] = toNode( l, uniqueCount, bitSetWithDimension ) );
 
             return new HashNode(
-                    splitDimension.dimension,
-                    array,
-                    toNode(splitDimension.any, uniqueCount, bitSetWithDimension)
+                splitDimension.dimension,
+                array,
+                toNode( splitDimension.any, uniqueCount, bitSetWithDimension )
             );
         }
     }
 
-    private BitSet withSet(BitSet eq, int dimension) {
-        var bitSet = BitSet.valueOf(eq.toLongArray());
-        bitSet.set(dimension);
+    private BitSet withSet( BitSet eq, int dimension ) {
+        var bitSet = BitSet.valueOf( eq.toLongArray() );
+        bitSet.set( dimension );
         return bitSet;
     }
 
-    private SplitDimension findSplitDimension(List<ValueData<T>> data, long[] uniqueCount, BitSet eqBitSet) {
+    private SplitDimension findSplitDimension( List<ValueData<T>> data, long[] uniqueCount, BitSet eqBitSet ) {
         int priority = Dimension.PRIORITY_LOW;
         int priorityArray = Dimension.PRIORITY_LOW;
         long uniqueSize = -1;
@@ -324,442 +341,444 @@ public class Tree<T> {
         int splitDimension = -1;
         int splitArrayDimension = -1;
 
-        for (int i = 0; i < dimensions.size(); i++) {
-            if (eqBitSet.get(i)) continue;
+        for( int i = 0; i < dimensions.size(); i++ ) {
+            if( eqBitSet.get( i ) ) continue;
 
-            var dimension = dimensions.get(i);
+            var dimension = dimensions.get( i );
 
             var isArray = dimension.operationType == null;
 
-            if (isArray && splitDimension >= 0) continue;
+            if( isArray && splitDimension >= 0 ) continue;
 
             var unique = new HashSet<>();
             var uniqueArray = new HashSet<>();
 
-            for (var vd : data) {
-                var value = vd.data.get(i);
-                if (value instanceof Array) {
-                    var array = (Array) value;
-                    if (!array.isEmpty()) uniqueArray.add(array);
+            for( var vd : data ) {
+                var value = vd.data.get( i );
+                if( value instanceof Array ) {
+                    var array = ( Array ) value;
+                    if( !array.isEmpty() ) uniqueArray.add( array );
                 } else {
-                    var longValue = dimension.getOrDefault(value, ANY_AS_ARRAY);
-                    if (longValue != ANY_AS_ARRAY) unique.add(longValue[0]);
+                    var longValue = dimension.getOrDefault( value, ANY_AS_ARRAY );
+                    if( longValue != ANY_AS_ARRAY ) unique.add( longValue[0] );
                 }
 
             }
 
-            if (!isArray && unique.size() > 0 && (unique.size() > uniqueSize || dimension.priority > priority)) {
+            if( !isArray && unique.size() > 0 && ( unique.size() > uniqueSize || dimension.priority > priority ) ) {
                 uniqueSize = unique.size();
                 splitDimension = i;
                 priority = dimension.priority;
-            } else if (isArray && uniqueArray.size() > 0 && (uniqueArray.size() < uniqueArraySize || dimension.priority > priorityArray)) {
+            } else if( isArray && uniqueArray.size() > 0 && ( uniqueArray.size() < uniqueArraySize || dimension.priority > priorityArray ) ) {
                 uniqueArraySize = uniqueArray.size();
                 splitArrayDimension = i;
                 priorityArray = dimension.priority;
             }
         }
 
-        if (splitDimension < 0 && splitArrayDimension < 0) return null;
+        if( splitDimension < 0 && splitArrayDimension < 0 ) return null;
 
         final int finalSplitDimension = splitDimension >= 0 ? splitDimension : splitArrayDimension;
 
-        final Dimension dimension = dimensions.get(finalSplitDimension);
+        final Dimension dimension = dimensions.get( finalSplitDimension );
 
-        if (dimension.operationType == null) { //array
+        if( dimension.operationType == null ) { //array
 
-            Pair<List<ValueData<T>>, List<ValueData<T>>> partition = Lists.partition(data, vd -> !((Array) vd.data.get(finalSplitDimension)).isEmpty());
+            Pair<List<ValueData<T>>, List<ValueData<T>>> partition = Lists.partition( data, vd -> !( ( Array ) vd.data.get( finalSplitDimension ) ).isEmpty() );
 
-            return new SplitDimension(finalSplitDimension, Consts.ANY, emptyList(), emptyList(), emptyList(), partition._2, partition._1, emptyList());
+            return new SplitDimension( finalSplitDimension, Consts.ANY, emptyList(), emptyList(), emptyList(), partition._2, partition._1, emptyList() );
         } else {
 
-            var partitionAnyOther = Stream.of(data).partition(sd -> dimension.getOrDefault(sd.data.get(finalSplitDimension), ANY_AS_ARRAY) == ANY_AS_ARRAY);
+            var partitionAnyOther = Stream.of( data ).partition( sd -> dimension.getOrDefault( sd.data.get( finalSplitDimension ), ANY_AS_ARRAY ) == ANY_AS_ARRAY );
 
             var sorted = partitionAnyOther._2
-                    .sorted(Comparator.comparingLong(sd -> dimension.getOrDefault(sd.data.get(finalSplitDimension), ANY_AS_ARRAY)[0]))
-                    .collect(toList());
+                .sorted( Comparator.comparingLong( sd -> dimension.getOrDefault( sd.data.get( finalSplitDimension ), ANY_AS_ARRAY )[0] ) )
+                .collect( toList() );
 
             final long[] unique = sorted
-                    .stream()
-                    .mapToLong(sd -> dimension.getOrDefault(sd.data.get(finalSplitDimension), ANY_AS_ARRAY)[0]).distinct().toArray();
+                .stream()
+                .mapToLong( sd -> dimension.getOrDefault( sd.data.get( finalSplitDimension ), ANY_AS_ARRAY )[0] ).distinct().toArray();
 
-            if ((dimension.operationType == CONTAINS || dimension.operationType == CONTAINS_ALL)
-                    && unique.length > 1
-                    && (double) unique.length / uniqueCount[finalSplitDimension] > hashFillFactor) {
-                final List<ValueData<T>> any = partitionAnyOther._1.collect(toList());
+            if( ( dimension.operationType == CONTAINS || dimension.operationType == CONTAINS_ALL )
+                && unique.length > 1
+                && ( double ) unique.length / uniqueCount[finalSplitDimension] > hashFillFactor ) {
+                final List<ValueData<T>> any = partitionAnyOther._1.collect( toList() );
 
-                return new SplitDimension(finalSplitDimension, Consts.ANY, emptyList(), emptyList(), emptyList(), any, emptyList(), sorted);
+                return new SplitDimension( finalSplitDimension, Consts.ANY, emptyList(), emptyList(), emptyList(), any, emptyList(), sorted );
             } else {
 
 //                final long splitValue = dimension.getOrDefault( sorted.get( sorted.size() / 2).data.get( finalSplitDimension ), ANY_AS_ARRAY )[0];
                 final long splitValue = unique[unique.length / 2];
 
-                var partitionLeftEqRight = Stream.of(sorted)
-                        .partition(sd -> dimension.getOrDefault(sd.data.get(finalSplitDimension), ANY_AS_ARRAY)[0] < splitValue);
+                var partitionLeftEqRight = Stream.of( sorted )
+                    .partition( sd -> dimension.getOrDefault( sd.data.get( finalSplitDimension ), ANY_AS_ARRAY )[0] < splitValue );
                 var partitionEqRight = partitionLeftEqRight._2
-                        .partition(sd -> dimension.getOrDefault(sd.data.get(finalSplitDimension), ANY_AS_ARRAY)[0] == splitValue);
+                    .partition( sd -> dimension.getOrDefault( sd.data.get( finalSplitDimension ), ANY_AS_ARRAY )[0] == splitValue );
 
-                final List<ValueData<T>> left = partitionLeftEqRight._1.collect(toList());
-                final List<ValueData<T>> right = partitionEqRight._2.collect(toList());
-                final List<ValueData<T>> eq = partitionEqRight._1.collect(toList());
-                final List<ValueData<T>> any = Stream.of(partitionAnyOther._1).collect(toList());
+                final List<ValueData<T>> left = partitionLeftEqRight._1.collect( toList() );
+                final List<ValueData<T>> right = partitionEqRight._2.collect( toList() );
+                final List<ValueData<T>> eq = partitionEqRight._1.collect( toList() );
+                final List<ValueData<T>> any = Stream.of( partitionAnyOther._1 ).collect( toList() );
 
-                return new SplitDimension(finalSplitDimension, splitValue, left, right, eq, any, emptyList(), emptyList());
+                return new SplitDimension( finalSplitDimension, splitValue, left, right, eq, any, emptyList(), emptyList() );
             }
         }
     }
 
-    public Set<T> find(List<?> query) {
+    public Set<T> find( List<?> query ) {
         var result = new HashSet<T>();
-        var longQuery = Dimension.convertQueryToLong(dimensions, query);
+        var longQuery = Dimension.convertQueryToLong( dimensions, query );
 
-        if (preFilter) {
-            for (var pd : preFilters) {
+        if( preFilter ) {
+            for( var pd : preFilters ) {
                 var vals = longQuery[pd.index];
                 var found = false;
-                for (var v : vals) {
-                    if ((pd.bitSet.isEmpty() || pd.bitSet.get(v))
-                            && (pd.notBitSet.isEmpty() || !pd.notBitSet.get(v))) {
+                for( var v : vals ) {
+                    if( ( pd.bitSet.isEmpty() || pd.bitSet.get( v ) )
+                        && ( pd.notBitSet.isEmpty() || !pd.notBitSet.get( v ) ) ) {
                         found = true;
                         break;
                     }
                 }
 
-                if (!found) {
+                if( !found ) {
                     pd.dimension.preFilterRejectCounter.increment();
                     return Set.of();
                 }
             }
         }
 
-        find(root, longQuery, result);
+        find( root, longQuery, result );
         return result;
     }
 
-    private void find(TreeNode<T> node, long[][] query, HashSet<T> result) {
-        if (node == null) return;
+    private void find( TreeNode<T> node, long[][] query, HashSet<T> result ) {
+        if( node == null ) return;
 
-        if (node instanceof Leaf) {
-            result.addAll(((Leaf<T>) node).selections);
-        } else if (node instanceof Tree.Node) {
-            final Node n = (Node) node;
-            find(n.any, query, result);
+        if( node instanceof Leaf ) {
+            result.addAll( ( ( Leaf<T> ) node ).selections );
+        } else if( node instanceof Tree.Node ) {
+            final Node n = ( Node ) node;
+            find( n.any, query, result );
 
             final long[] qValue = query[n.dimension];
 
-            final Dimension dimension = dimensions.get(n.dimension);
+            final Dimension dimension = dimensions.get( n.dimension );
 
-            if (qValue == ANY_AS_ARRAY) return;
+            if( qValue == ANY_AS_ARRAY ) return;
 
             var sets = n.sets;
-            if (!sets.isEmpty()) {
-                for (ArrayBitSet set : sets) {
-                    if (set.find(qValue)) {
-                        find(set.equal, query, result);
+            if( !sets.isEmpty() ) {
+                for( ArrayBitSet set : sets ) {
+                    if( set.find( qValue ) ) {
+                        find( set.equal, query, result );
                     }
                 }
             } else {
-                var direction = dimension.direction(qValue, n.eqValue);
-                if ((direction & Direction.LEFT) > 0)
-                    find(n.left, query, result);
-                if ((direction & Direction.EQUAL) > 0)
-                    find(n.equal, query, result);
-                if ((direction & Direction.RIGHT) > 0)
-                    find(n.right, query, result);
+                var direction = dimension.direction( qValue, n.eqValue );
+                if( ( direction & LEFT ) > 0 )
+                    find( n.left, query, result );
+                if( ( direction & EQUAL ) > 0 )
+                    find( n.equal, query, result );
+                if( ( direction & RIGHT ) > 0 )
+                    find( n.right, query, result );
             }
         } else {
-            final HashNode n = (HashNode) node;
-            find(n.any, query, result);
+            final HashNode n = ( HashNode ) node;
+            find( n.any, query, result );
 
             final long[] qValue = query[n.dimension];
 
             final TreeNode<T>[] hash = n.hash;
-            if (qValue == ANY_AS_ARRAY) return;
+            if( qValue == ANY_AS_ARRAY ) return;
 
-            for (long aQValue : qValue) {
-                final int index = (int) aQValue;
-                if (index < hash.length) {
-                    find(hash[index], query, result);
+            for( long aQValue : qValue ) {
+                final int index = ( int ) aQValue;
+                if( index < hash.length ) {
+                    find( hash[index], query, result );
                 }
             }
         }
     }
 
-    public String trace(List<?> query) {
-        return trace(query, (key) -> true);
+    public String trace( List<?> query ) {
+        return trace( query, key -> true );
     }
 
-    public String trace(List<?> query, Predicate<T> filter) {
+    private void trace( TreeNode<T> node, long[][] query,
+                        HashMap<T, HashMap<Integer, TraceOperationTypeValues>> result,
+                        TraceBuffer buffer, boolean success ) {
+        if( node == null ) return;
+
+        if( node instanceof Leaf ) {
+            var selections = ( ( Leaf<T> ) node ).selections;
+            if( !success ) {
+                selections.forEach( s -> {
+                    var dv = result.computeIfAbsent( s, ss -> new HashMap<>() );
+                    buffer.forEach( ( d, otv ) ->
+                        otv.forEach( ( ot, v ) ->
+                            dv
+                                .computeIfAbsent( d, dd -> new TraceOperationTypeValues() )
+                                .addAll( ot, v )
+                        )
+                    );
+                } );
+            } else {
+                selections.forEach( result::remove );
+            }
+        } else if( node instanceof Tree.Node ) {
+            var n = ( Node ) node;
+            trace( n.any, query, result, buffer.clone(), success );
+
+            var qValue = query[n.dimension];
+
+            var dimension = dimensions.get( n.dimension );
+
+            if( qValue == ANY_AS_ARRAY ) {
+                trace( n.equal, query, result, buffer.cloneWith( n.dimension, n.eqValue, dimension.operationType, false ), false );
+                trace( n.right, query, result, buffer.clone(), false );
+                trace( n.left, query, result, buffer.clone(), false );
+
+                for( var set : n.sets ) {
+                    trace( set.equal, query, result,
+                        buffer.cloneWith( n.dimension, set.bitSet.stream(),
+                            set.operation.operationType, false ), false );
+                }
+            } else if( !n.sets.isEmpty() ) {
+                for( var set : n.sets ) {
+                    var eqSuccess = set.find( qValue );
+                    trace( set.equal, query, result, buffer.cloneWith( n.dimension, set.bitSet.stream(),
+                        set.operation.operationType, eqSuccess ), success && eqSuccess );
+                }
+            } else {
+                var direction = dimension.direction( qValue, n.eqValue );
+
+                var left = ( direction & LEFT ) > 0;
+                trace( n.left, query, result, buffer.clone(), success && left );
+
+                var right = ( direction & RIGHT ) > 0;
+                trace( n.right, query, result, buffer.clone(), success && right );
+
+                var eq = ( direction & EQUAL ) > 0;
+                trace( n.equal, query, result, buffer.cloneWith( n.dimension, n.eqValue, dimension.operationType, eq ), success && eq );
+            }
+        } else {
+            var n = ( HashNode ) node;
+            trace( n.any, query, result, buffer.clone(), success );
+
+            var qValue = query[n.dimension];
+
+            var dimension = dimensions.get( n.dimension );
+
+            if( qValue == ANY_AS_ARRAY ) {
+                for( var s : n.hash ) {
+                    trace( s, query, result, buffer.clone(), false );
+                }
+            } else {
+                for( var i = 0; i < n.hash.length; i++ ) {
+                    var contains = ArrayUtils.contains( qValue, i );
+                    trace( n.hash[i], query, result, buffer.cloneWith( n.dimension, i, dimension.operationType, contains ), success && contains );
+                }
+            }
+        }
+    }
+
+    public String trace( List<?> query, Predicate<T> filter ) {
         var result = new HashMap<T, HashMap<Integer, TraceOperationTypeValues>>();
-        var longQuery = Dimension.convertQueryToLong(dimensions, query);
+        var longQuery = Dimension.convertQueryToLong( dimensions, query );
 
-        var queryStr = "query = " + Stream.of(query)
-                .zipWithIndex()
-                .map(p -> dimensions.get(p._2).name + ":" + printValue(p._1))
-                .collect(joining(",", "[", "]")) + "\n";
+        var queryStr = "query = " + Stream.of( query )
+            .zipWithIndex()
+            .map( p -> dimensions.get( p._2 ).name + ":" + printValue( p._1 ) )
+            .collect( joining( ",", "[", "]" ) ) + "\n";
 
-        if (root == null) {
+        if( root == null ) {
             return queryStr + "Tree is empty";
         }
 
         var outPF = new StringBuilder();
-        if (preFilter) {
-            for (var pd : preFilters) {
+        if( preFilter ) {
+            for( var pd : preFilters ) {
                 var vals = longQuery[pd.index];
                 var found = false;
-                for (var v : vals) {
-                    if ((pd.bitSet.isEmpty() || pd.bitSet.get(v))
-                            && (pd.notBitSet.isEmpty() || !pd.notBitSet.get(v))) {
+                for( var v : vals ) {
+                    if( ( pd.bitSet.isEmpty() || pd.bitSet.get( v ) )
+                        && ( pd.notBitSet.isEmpty() || !pd.notBitSet.get( v ) ) ) {
                         found = true;
                         break;
                     }
                 }
 
-                if (!found) {
-                    outPF.append("  Dimension: ").append(pd.dimension.name).append(", q: ").append(queryToString(query, pd.index)).append("\n");
+                if( !found ) {
+                    outPF.append( "  Dimension: " ).append( pd.dimension.name ).append( ", q: " ).append( queryToString( query, pd.index ) ).append( "\n" );
                 }
             }
         }
 
-        if (outPF.length() == 0) {
-            trace(root, longQuery, result, new TraceBuffer(), true);
+        if( outPF.length() == 0 ) {
+            trace( root, longQuery, result, new TraceBuffer(), true );
         }
 
 
         var out = result
-                .entrySet()
-                .stream()
-                .filter(e -> filter.test(e.getKey()))
-                .map(e -> e.getKey().toString() + ": \n"
-                                + e.getValue().entrySet().stream().map(dv -> {
-                            var dimension = dimensions.get(dv.getKey());
-                            return "    " + dimension.name + "/" + dv.getKey() + ": "
-                                    + dv.getValue().toString(dimension) + " " + queryToString(query, dv.getKey());
-                        }
-                        ).collect(joining("\n"))
-                ).collect(joining("\n"));
+            .entrySet()
+            .stream()
+            .filter( e -> filter.test( e.getKey() ) )
+            .map( e -> e.getKey().toString() + ": \n"
+                    + e.getValue().entrySet().stream().map( dv -> {
+                    var dimension = dimensions.get( dv.getKey() );
+                    return "    " + dimension.name + "/" + dv.getKey() + ": "
+                        + dv.getValue().toString( dimension ) + " " + queryToString( query, dv.getKey() );
+                }
+                ).collect( joining( "\n" ) )
+            ).collect( joining( "\n" ) );
 
         return queryStr
-                + (outPF.length() > 0 ? "Tree Prefilters:\n" + outPF : "")
-                + (out.length() > 0 ? "Expecting:\n" + out : (outPF.length() == 0 ? "ALL OK" : ""));
+            + ( outPF.length() > 0 ? "Tree Prefilters:\n" + outPF : "" )
+            + ( out.length() > 0 ? "Expecting:\n" + out : ( outPF.length() == 0 ? "ALL OK" : "" ) );
     }
 
-    private String printValue(Object o) {
-        if (o == null
-                || (o instanceof Optional<?> && ((Optional<?>) o).isEmpty())
-                || (o instanceof List<?> && ((List<?>) o).isEmpty())
+    private String printValue( Object o ) {
+        if( o == null
+            || ( o instanceof Optional<?> && ( ( Optional<?> ) o ).isEmpty() )
+            || ( o instanceof List<?> && ( ( List<?> ) o ).isEmpty() )
         ) {
             return Strings.UNKNOWN;
         }
         return o.toString();
     }
 
-    public Map<T, Map<String, Integer>> traceStatistics(List<List<?>> queries) {
+    public Map<T, Map<String, Integer>> traceStatistics( List<List<?>> queries ) {
         var resultStats = new HashMap<T, Map<String, Integer>>();
 
-        for (List<?> query : queries) {
+        for( List<?> query : queries ) {
             var result = new HashMap<T, HashMap<Integer, TraceOperationTypeValues>>();
-            var longQuery = Dimension.convertQueryToLong(dimensions, query);
-            trace(root, longQuery, result, new TraceBuffer(), true);
+            var longQuery = Dimension.convertQueryToLong( dimensions, query );
+            trace( root, longQuery, result, new TraceBuffer(), true );
 
             var stats = result
-                    .entrySet()
-                    .stream()
-                    .collect(toMap(
-                            Map.Entry::getKey,
-                            e -> e.getValue().entrySet().stream().collect(toMap(
-                                    dv -> dimensions.get(dv.getKey()).name,
-                                    dv -> 1
-                            ))
-                    ));
+                .entrySet()
+                .stream()
+                .collect( toMap(
+                    Map.Entry::getKey,
+                    e -> e.getValue().entrySet().stream().collect( toMap(
+                        dv -> dimensions.get( dv.getKey() ).name,
+                        dv -> 1
+                    ) )
+                ) );
 
-            mergeInto(stats, resultStats);
+            mergeInto( stats, resultStats );
         }
 
         return resultStats;
     }
 
-    private void mergeInto(Map<T, Map<String, Integer>> stat, HashMap<T, Map<String, Integer>> result) {
-        stat.forEach((s, m) -> {
-            final Map<String, Integer> statBySelection = result.computeIfAbsent(s, (ss) -> new HashMap<>());
+    private void mergeInto( Map<T, Map<String, Integer>> stat, HashMap<T, Map<String, Integer>> result ) {
+        stat.forEach( ( s, m ) -> {
+            final Map<String, Integer> statBySelection = result.computeIfAbsent( s, ss -> new HashMap<>() );
 
-            m.forEach((dimension, count) ->
-                    statBySelection.compute(dimension, (d, c) -> c == null ? count : c + count));
-        });
+            m.forEach( ( dimension, count ) ->
+                statBySelection.compute( dimension, ( d, c ) -> c == null ? count : c + count ) );
+        } );
 
     }
 
-    private String queryToString(List<?> query, int key) {
-        final Object value = query.get(key);
-        if (value instanceof List<?>) {
-            return ((List<?>) value).stream().map(v -> v == null ? Strings.UNKNOWN
-                    : String.valueOf(v)).collect(joining(",", "[", "]"));
+    private String queryToString( List<?> query, int key ) {
+        final Object value = query.get( key );
+        if( value instanceof List<?> ) {
+            return ( ( List<?> ) value ).stream().map( v -> v == null ? Strings.UNKNOWN
+                : String.valueOf( v ) ).collect( joining( ",", "[", "]" ) );
         } else {
-            return queryValueToString(value);
+            return queryValueToString( value );
         }
     }
 
-    private String queryValueToString(Object value) {
-        return value == null || value == Optional.empty() ? Strings.UNKNOWN : String.valueOf(value);
-    }
-
-    private void trace(TreeNode<T> node, long[][] query,
-                       HashMap<T, HashMap<Integer, TraceOperationTypeValues>> result,
-                       TraceBuffer buffer, boolean success) {
-        if (node == null) return;
-
-        if (node instanceof Leaf) {
-            var selections = ((Leaf<T>) node).selections;
-            if (!success) {
-                selections.forEach(s -> {
-                    var dv = result.computeIfAbsent(s, (ss) -> new HashMap<>());
-                    buffer.forEach((d, otv) ->
-                            otv.forEach((ot, v) ->
-                                    dv
-                                            .computeIfAbsent(d, (dd) -> new TraceOperationTypeValues())
-                                            .addAll(ot, v)
-                            )
-                    );
-                });
-            } else {
-                selections.forEach(result::remove);
-            }
-        } else if (node instanceof Tree.Node) {
-            var n = (Node) node;
-            trace(n.any, query, result, buffer.clone(), success);
-
-            var qValue = query[n.dimension];
-
-            var dimension = dimensions.get(n.dimension);
-
-            if (qValue == ANY_AS_ARRAY) {
-                trace(n.equal, query, result, buffer.cloneWith(n.dimension, n.eqValue, dimension.operationType, false), false);
-                trace(n.right, query, result, buffer.clone(), false);
-                trace(n.left, query, result, buffer.clone(), false);
-
-                for (var set : n.sets) {
-                    trace(set.equal, query, result,
-                            buffer.cloneWith(n.dimension, set.bitSet.stream(),
-                                    set.operation.operationType, false), false);
-                }
-            } else if (!n.sets.isEmpty()) {
-                for (var set : n.sets) {
-                    var eqSuccess = set.find(qValue);
-                    trace(set.equal, query, result, buffer.cloneWith(n.dimension, set.bitSet.stream(),
-                            set.operation.operationType, eqSuccess), success && eqSuccess);
-                }
-            } else {
-                var direction = dimension.direction(qValue, n.eqValue);
-
-                var left = (direction & Direction.LEFT) > 0;
-                trace(n.left, query, result, buffer.clone(), success && left);
-
-                var right = (direction & Direction.RIGHT) > 0;
-                trace(n.right, query, result, buffer.clone(), success && right);
-
-                var eq = (direction & Direction.EQUAL) > 0;
-                trace(n.equal, query, result, buffer.cloneWith(n.dimension, n.eqValue, dimension.operationType, eq), success && eq);
-            }
-        } else {
-            var n = (HashNode) node;
-            trace(n.any, query, result, buffer.clone(), success);
-
-            var qValue = query[n.dimension];
-
-            var dimension = dimensions.get(n.dimension);
-
-            if (qValue == ANY_AS_ARRAY) {
-                for (var s : n.hash) {
-                    trace(s, query, result, buffer.clone(), false);
-                }
-            } else {
-                for (var i = 0; i < n.hash.length; i++) {
-                    var contains = ArrayUtils.contains(qValue, i);
-                    trace(n.hash[i], query, result, buffer.cloneWith(n.dimension, i, dimension.operationType, contains), success && contains);
-                }
-            }
-        }
+    private String queryValueToString( Object value ) {
+        return value == null || value == Optional.empty() ? Strings.UNKNOWN : String.valueOf( value );
     }
 
     @Override
     public String toString() {
-        return toString(-1);
+        return toString( -1 );
     }
 
-    public String toString(int depth) {
+    public String toString( int depth ) {
         var out = new StringBuilder();
 
-        print(root, out, depth);
+        print( root, out, depth );
 
         return out.toString();
     }
 
-    private void print(TreeNode<T> node, StringBuilder out, int depth) {
-        print("", true, node, out, "root", 1, depth);
+    private void print( String prefix, boolean isTail, TreeNode<T> node, StringBuilder out, String type, int level, int depth ) {
+        out.append( prefix ).append( isTail ? "└── " : "├── " ).append( type ).append( ":" );
+        if( node != null ) {
+            node.print( out );
+            out.append( "\n" );
+
+            if( depth > 0 && level >= depth ) return;
+
+            var children = Lists.filter( node.children(), p -> p._2 != null );
+
+            for( int i = 0; i < children.size(); i++ ) {
+                var child = children.get( i );
+                var name = child._1;
+                var value = child._2;
+
+                if( value != null )
+                    print( prefix + ( isTail ? "    "
+                        : "│   " ), i + 1 >= children.size(), value, out, name, level + 1, depth );
+
+            }
+        }
+    }
+
+    private void print( TreeNode<T> node, StringBuilder out, int depth ) {
+        print( "", true, node, out, "root", 1, depth );
     }
 
     public int getMaxDepth() {
-        var depth = new AtomicInteger(0);
-        findMaxDepth(root, depth, 1);
+        var depth = new AtomicInteger( 0 );
+        findMaxDepth( root, depth, 1 );
 
         return depth.get();
     }
 
-    private void findMaxDepth(TreeNode<T> node, AtomicInteger maxDepth, int currentDepth) {
-        if (node == null) {
-            if (currentDepth - 1 > maxDepth.get()) maxDepth.set(currentDepth - 1);
+    private void findMaxDepth( TreeNode<T> node, AtomicInteger maxDepth, int currentDepth ) {
+        if( node == null ) {
+            if( currentDepth - 1 > maxDepth.get() ) maxDepth.set( currentDepth - 1 );
             return;
         }
 
-        if (node instanceof Leaf) {
-            if (currentDepth > maxDepth.get()) maxDepth.set(currentDepth);
-        } else if (node instanceof Tree.Node) {
-            var n = (Node) node;
-            findMaxDepth(n.left, maxDepth, currentDepth + 1);
-            findMaxDepth(n.right, maxDepth, currentDepth + 1);
-            findMaxDepth(n.any, maxDepth, currentDepth + 1);
-            findMaxDepth(n.equal, maxDepth, currentDepth + 1);
+        if( node instanceof Leaf ) {
+            if( currentDepth > maxDepth.get() ) maxDepth.set( currentDepth );
+        } else if( node instanceof Tree.Node ) {
+            var n = ( Node ) node;
+            findMaxDepth( n.left, maxDepth, currentDepth + 1 );
+            findMaxDepth( n.right, maxDepth, currentDepth + 1 );
+            findMaxDepth( n.any, maxDepth, currentDepth + 1 );
+            findMaxDepth( n.equal, maxDepth, currentDepth + 1 );
 
-            for (var abs : n.sets) {
-                findMaxDepth(abs.equal, maxDepth, currentDepth + 1);
+            for( var abs : n.sets ) {
+                findMaxDepth( abs.equal, maxDepth, currentDepth + 1 );
             }
         } else {
-            var n = (HashNode) node;
+            var n = ( HashNode ) node;
 
-            findMaxDepth(n.any, maxDepth, currentDepth + 1);
-            for (var i = 0; i < n.hash.length; i++) {
-                findMaxDepth(n.hash[i], maxDepth, currentDepth + 1);
+            findMaxDepth( n.any, maxDepth, currentDepth + 1 );
+            for( var i = 0; i < n.hash.length; i++ ) {
+                findMaxDepth( n.hash[i], maxDepth, currentDepth + 1 );
             }
         }
     }
 
-    private void print(String prefix, boolean isTail, TreeNode<T> node, StringBuilder out, String type, int level, int depth) {
-        out.append(prefix).append(isTail ? "└── " : "├── ").append(type).append(":");
-        if (node != null) {
-            node.print(out);
-            out.append("\n");
-
-            if (depth > 0 && level >= depth) return;
-
-            var children = Lists.filter(node.children(), p -> p._2 != null);
-
-            for (int i = 0; i < children.size(); i++) {
-                var child = children.get(i);
-                var name = child._1;
-                var value = child._2;
-
-                if (value != null)
-                    print(prefix + (isTail ? "    " : "│   "), i + 1 >= children.size(), value, out, name, level + 1, depth);
-
-            }
-        }
-    }
 
     public enum ArrayOperation {
-        OR(CONTAINS), AND(CONTAINS_ALL), NOT(NOT_CONTAINS);
+        OR( CONTAINS ), AND( CONTAINS_ALL ), NOT( NOT_CONTAINS );
 
         public final OperationType operationType;
 
-        ArrayOperation(OperationType operationType) {
+        ArrayOperation( OperationType operationType ) {
             this.operationType = operationType;
         }
     }
@@ -767,7 +786,7 @@ public class Tree<T> {
     private interface TreeNode<T> {
         List<Pair<String, TreeNode<T>>> children();
 
-        void print(StringBuilder out);
+        void print( StringBuilder out );
     }
 
     public static class PreFilter {
@@ -776,7 +795,7 @@ public class Tree<T> {
         public final oap.util.BitSet bitSet;
         public final oap.util.BitSet notBitSet;
 
-        public PreFilter(Dimension dimension, int index, oap.util.BitSet bitSet, oap.util.BitSet notBitSet) {
+        public PreFilter( Dimension dimension, int index, oap.util.BitSet bitSet, oap.util.BitSet notBitSet ) {
             this.dimension = dimension;
             this.index = index;
             this.bitSet = bitSet;
@@ -784,13 +803,13 @@ public class Tree<T> {
         }
     }
 
-    @ToString(callSuper = true)
-    @EqualsAndHashCode(callSuper = true)
+    @ToString( callSuper = true )
+    @EqualsAndHashCode( callSuper = true )
     public static class Array extends ArrayList<Object> {
         public final ArrayOperation operation;
 
-        public Array(Collection<?> c, ArrayOperation operation) {
-            super(c);
+        public Array( Collection<?> c, ArrayOperation operation ) {
+            super( c );
             this.operation = operation;
         }
     }
@@ -799,15 +818,15 @@ public class Tree<T> {
         public final List<?> data;
         public final T value;
 
-        public ValueData(List<?> data, T value) {
+        public ValueData( List<?> data, T value ) {
             this.data = data;
             this.value = value;
         }
 
-        public ValueData<T> cloneWith(int index, Object item) {
-            var data = new ArrayList<Object>(this.data);
-            data.set(index, item);
-            return new ValueData<>(data, value);
+        public ValueData<T> cloneWith( int index, Object item ) {
+            var data = new ArrayList<Object>( this.data );
+            data.set( index, item );
+            return new ValueData<>( data, value );
         }
     }
 
@@ -815,7 +834,7 @@ public class Tree<T> {
     static class Leaf<T> implements TreeNode<T> {
         final List<T> selections;
 
-        private Leaf(List<T> selections) {
+        private Leaf( List<T> selections ) {
             this.selections = selections;
         }
 
@@ -825,13 +844,13 @@ public class Tree<T> {
         }
 
         @Override
-        public void print(StringBuilder out) {
+        public void print( StringBuilder out ) {
             var collect = selections.stream()
-                    .map(Object::toString)
-                    .collect(java.util.stream.Collectors.joining(","));
-            out.append("dn|[")
-                    .append(collect)
-                    .append("]");
+                .map( Object::toString )
+                .collect( java.util.stream.Collectors.joining( "," ) );
+            out.append( "dn|[" )
+                .append( collect )
+                .append( "]" );
         }
     }
 
@@ -839,43 +858,43 @@ public class Tree<T> {
         public final HashMap<ArrayOperation, HashMap<Long, AtomicInteger>> counts = new HashMap<>();
         public final HashMap<ArrayOperation, HashMap<Long, AtomicInteger>> size = new HashMap<>();
 
-        public void update(ArrayOperation operationType, long count) {
-            if (count > 0)
+        public void update( ArrayOperation operationType, long count ) {
+            if( count > 0 )
                 counts
-                        .computeIfAbsent(operationType, op -> new HashMap<>())
-                        .computeIfAbsent(count, (i) -> new AtomicInteger())
-                        .incrementAndGet();
+                    .computeIfAbsent( operationType, op -> new HashMap<>() )
+                    .computeIfAbsent( count, i -> new AtomicInteger() )
+                    .incrementAndGet();
         }
 
-        public void updateSize(ArrayOperation operationType, long count) {
+        public void updateSize( ArrayOperation operationType, long count ) {
             size
-                    .computeIfAbsent(operationType, op -> new HashMap<>())
-                    .computeIfAbsent(count, (i) -> new AtomicInteger())
-                    .incrementAndGet();
+                .computeIfAbsent( operationType, op -> new HashMap<>() )
+                .computeIfAbsent( count, i -> new AtomicInteger() )
+                .incrementAndGet();
         }
     }
 
     private class TraceOperationTypeValues extends HashMap<OperationType, HashSet<Long>> {
-        public void add(OperationType operationType, long eqValue) {
-            this.computeIfAbsent(operationType, (ot) -> new HashSet<>()).add(eqValue);
+        public void add( OperationType operationType, long eqValue ) {
+            this.computeIfAbsent( operationType, ot -> new HashSet<>() ).add( eqValue );
         }
 
-        public void addAll(OperationType operationType, HashSet<Long> v) {
-            this.computeIfAbsent(operationType, (ot) -> new HashSet<>()).addAll(v);
+        public void addAll( OperationType operationType, HashSet<Long> v ) {
+            this.computeIfAbsent( operationType, ot -> new HashSet<>() ).addAll( v );
         }
 
-        public String toString(Dimension dimension) {
+        public String toString( Dimension dimension ) {
             String collect = entrySet().stream()
-                    .map(e -> {
-                                var size = e.getValue().size();
+                .map( e -> {
+                        var size = e.getValue().size();
 
-                                return e.getValue().stream()
-                                        .limit(maxTraceListCount)
-                                        .map(dimension::toString)
-                                        .collect(joining(",", "[", size > maxTraceListCount ? ",...]" : "]")) + " " + e.getKey();
-                            }
-                    )
-                    .collect(joining(", "));
+                        return e.getValue().stream()
+                            .limit( maxTraceListCount )
+                            .map( dimension::toString )
+                            .collect( joining( ",", "[", size > maxTraceListCount ? ",...]" : "]" ) ) + " " + e.getKey();
+                    }
+                )
+                .collect( joining( ", " ) );
             return collect;
         }
     }
@@ -883,33 +902,33 @@ public class Tree<T> {
     private class TraceBuffer extends HashMap<Integer, TraceOperationTypeValues> {
 
 
-        public TraceBuffer() {
+        private TraceBuffer() {
         }
 
-        private TraceBuffer(Map<Integer, TraceOperationTypeValues> m) {
-            super(m);
+        private TraceBuffer( Map<Integer, TraceOperationTypeValues> m ) {
+            super( m );
         }
 
         @Override
         public TraceBuffer clone() {
-            return new TraceBuffer(this);
+            return new TraceBuffer( this );
         }
 
-        public TraceBuffer cloneWith(int dimension, long eqValue, OperationType operationType, boolean success) {
-            return cloneWith(dimension, LongStream.of(eqValue), operationType, success);
+        public TraceBuffer cloneWith( int dimension, long eqValue, OperationType operationType, boolean success ) {
+            return cloneWith( dimension, LongStream.of( eqValue ), operationType, success );
         }
 
-        public TraceBuffer cloneWith(int dimension, IntStream eqValue, OperationType operationType, boolean success) {
-            return cloneWith(dimension, eqValue.mapToLong(v -> v), operationType, success);
+        public TraceBuffer cloneWith( int dimension, IntStream eqValue, OperationType operationType, boolean success ) {
+            return cloneWith( dimension, eqValue.mapToLong( v -> v ), operationType, success );
         }
 
-        public TraceBuffer cloneWith(int dimension, LongStream eqValue, OperationType operationType, boolean success) {
+        public TraceBuffer cloneWith( int dimension, LongStream eqValue, OperationType operationType, boolean success ) {
             final TraceBuffer clone = clone();
-            if (!success) {
+            if( !success ) {
                 final TraceOperationTypeValues v = clone
-                        .computeIfAbsent(dimension, (d) -> new TraceOperationTypeValues());
+                    .computeIfAbsent( dimension, d -> new TraceOperationTypeValues() );
 
-                eqValue.forEach(eqv -> v.add(operationType, eqv));
+                eqValue.forEach( eqv -> v.add( operationType, eqv ) );
             }
             return clone;
         }
@@ -921,34 +940,34 @@ public class Tree<T> {
         private final ArrayOperation operation;
         private final TreeNode<T> equal;
 
-        public ArrayBitSet(BitSet bitSet, ArrayOperation operation, TreeNode<T> equal) {
+        private ArrayBitSet( BitSet bitSet, ArrayOperation operation, TreeNode<T> equal ) {
             this.bitSet = bitSet;
             this.operation = operation;
             this.equal = equal;
         }
 
-        public final boolean find(long[] qValue) {
-            switch (operation) {
+        public final boolean find( long[] qValue ) {
+            switch( operation ) {
                 case OR -> {
-                    for (long value : qValue) {
-                        if (bitSet.get((int) value)) return true;
+                    for( long value : qValue ) {
+                        if( bitSet.get( ( int ) value ) ) return true;
                     }
                     return false;
                 }
                 case AND -> {
-                    var newBitSet = (BitSet) bitSet.clone();
-                    for (long value : qValue) {
-                        newBitSet.clear((int) value);
+                    var newBitSet = ( BitSet ) bitSet.clone();
+                    for( long value : qValue ) {
+                        newBitSet.clear( ( int ) value );
                     }
                     return newBitSet.isEmpty();
                 }
                 case NOT -> {
-                    for (long value : qValue) {
-                        if (bitSet.get((int) value)) return false;
+                    for( long value : qValue ) {
+                        if( bitSet.get( ( int ) value ) ) return false;
                     }
                     return true;
                 }
-                default -> throw new IllegalStateException("Unknown Operation type " + operation.name());
+                default -> throw new IllegalStateException( "Unknown Operation type " + operation.name() );
             }
         }
     }
@@ -964,14 +983,14 @@ public class Tree<T> {
         private final long value;
 
         private SplitDimension(
-                int dimension,
-                long value,
-                List<ValueData<T>> left,
-                List<ValueData<T>> right,
-                List<ValueData<T>> equal,
-                List<ValueData<T>> any,
-                List<ValueData<T>> sets,
-                List<ValueData<T>> hash
+            int dimension,
+            long value,
+            List<ValueData<T>> left,
+            List<ValueData<T>> right,
+            List<ValueData<T>> equal,
+            List<ValueData<T>> any,
+            List<ValueData<T>> sets,
+            List<ValueData<T>> hash
         ) {
             this.dimension = dimension;
             this.value = value;
@@ -991,7 +1010,7 @@ public class Tree<T> {
         final int dimension;
         final TreeNode<T> any;
 
-        public HashNode(int dimension, TreeNode<T>[] hash, TreeNode<T> any) {
+        HashNode( int dimension, TreeNode<T>[] hash, TreeNode<T> any ) {
             this.hash = hash;
             this.dimension = dimension;
             this.any = any;
@@ -1000,22 +1019,22 @@ public class Tree<T> {
         @Override
         public List<Pair<String, TreeNode<T>>> children() {
             var result = new ArrayList<Pair<String, TreeNode<T>>>();
-            result.add(__("a", any));
+            result.add( __( "a", any ) );
 
-            for (var i = 0; i < hash.length; i++) {
+            for( var i = 0; i < hash.length; i++ ) {
                 var heq = hash[i];
-                result.add(__("h" + i, heq));
+                result.add( __( "h" + i, heq ) );
             }
 
             return result;
         }
 
         @Override
-        public void print(StringBuilder out) {
-            var dimension = dimensions.get(this.dimension);
-            out.append("kdh|")
-                    .append("d:")
-                    .append(dimension.name).append('/').append(this.dimension);
+        public void print( StringBuilder out ) {
+            var dimension = dimensions.get( this.dimension );
+            out.append( "kdh|" )
+                .append( "d:" )
+                .append( dimension.name ).append( '/' ).append( this.dimension );
         }
     }
 
@@ -1029,8 +1048,8 @@ public class Tree<T> {
         final int dimension;
         final long eqValue;
 
-        private Node(int dimension, long eqValue, TreeNode<T> left, TreeNode<T> right,
-                     TreeNode<T> equal, TreeNode<T> any, List<ArrayBitSet> sets) {
+        private Node( int dimension, long eqValue, TreeNode<T> left, TreeNode<T> right,
+                      TreeNode<T> equal, TreeNode<T> any, List<ArrayBitSet> sets ) {
             this.dimension = dimension;
             this.eqValue = eqValue;
             this.left = left;
@@ -1043,34 +1062,35 @@ public class Tree<T> {
         @Override
         public List<Pair<String, TreeNode<T>>> children() {
             var result = new ArrayList<Pair<String, TreeNode<T>>>();
-            result.add(__("l", left));
-            result.add(__("r", right));
-            result.add(__("eq", equal));
-            result.add(__("a", any));
+            result.add( __( "l", left ) );
+            result.add( __( "r", right ) );
+            result.add( __( "eq", equal ) );
+            result.add( __( "a", any ) );
 
-            for (var set : sets)
-                result.add(__((set.operation.name() + ":") + bitSetToData(set.bitSet), set.equal));
+            for( var set : sets )
+                result.add( __( ( set.operation.name() + ":" ) + bitSetToData( set.bitSet ), set.equal ) );
 
             return result;
         }
 
-        private String bitSetToData(BitSet bitSet) {
-            var dimension = dimensions.get(this.dimension);
+        private String bitSetToData( BitSet bitSet ) {
+            var dimension = dimensions.get( this.dimension );
 
-            var size = bitSet.stream().limit(maxTraceListCount + 1).count();
+            var size = bitSet.stream().limit( maxTraceListCount + 1 ).count();
             return bitSet
-                    .stream()
-                    .limit(maxTraceListCount)
-                    .mapToObj(dimension::toString).collect(joining(",", "[", size > maxTraceListCount ? ",...]" : "]"));
+                .stream()
+                .limit( maxTraceListCount )
+                .mapToObj( dimension::toString ).collect( joining( ",", "[",
+                    size > maxTraceListCount ? ",...]" : "]" ) );
         }
 
         @Override
-        public void print(StringBuilder out) {
-            var dimension = dimensions.get(this.dimension);
-            out.append("kdn|")
-                    .append("d:")
-                    .append(dimension.name).append('/').append(this.dimension)
-                    .append(",sv:").append(dimension.toString(eqValue));
+        public void print( StringBuilder out ) {
+            var dimension = dimensions.get( this.dimension );
+            out.append( "kdn|" )
+                .append( "d:" )
+                .append( dimension.name ).append( '/' ).append( this.dimension )
+                .append( ",sv:" ).append( dimension.toString( eqValue ) );
         }
     }
 }

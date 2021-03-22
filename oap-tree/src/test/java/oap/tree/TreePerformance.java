@@ -42,21 +42,21 @@ public class TreePerformance {
 //        benchmarkTree( 0.25, 100, 5, new int[] { 10000, 100000, 1000000 } );
 //        benchmarkTree( 0.25, 100, 10, new int[] { 10000, 100000, 1000000 } );
 //        benchmarkTree( 0.25, 100, 20, new int[] { 10000, 100000, 1000000 } );
-        benchmarkTree(0.25, 2000, 50, 1000000, 1.0, true);
-        benchmarkTree(0.25, 2000, 50, 1000000, 1.0, false);
-        benchmarkTree(0.25, 2000, 50, 1000000, 0.3, true);
-        benchmarkTree(0.25, 2000, 50, 1000000, 0.3, false);
+        benchmarkTree( 0.25, 2000, 50, 1000000, 1.0, true );
+        benchmarkTree( 0.25, 2000, 50, 1000000, 1.0, false );
+        benchmarkTree( 0.25, 2000, 50, 1000000, 0.3, true );
+        benchmarkTree( 0.25, 2000, 50, 1000000, 0.3, false );
 //        benchmarkTree( 0.25, 100, 100, new int[] { /*1000, 10000, */100000 } );
     }
 
-    public void benchmarkTree(double fillFactor, int selections, int dimensions, int requests, double rate, boolean preFilter) {
+    public void benchmarkTree( double fillFactor, int selections, int dimensions, int requests, double rate, boolean preFilter ) {
         var id = new ArrayList<Dimension>();
 
-        for (int i = 0; i < dimensions; i++) {
-            if (i % 2 == 0) {
-                id.add(LONG("s" + i, CONTAINS, null));
+        for( int i = 0; i < dimensions; i++ ) {
+            if( i % 2 == 0 ) {
+                id.add( LONG( "s" + i, CONTAINS, null ) );
             } else {
-                id.add(STRING("s" + i, CONTAINS, preFilter));
+                id.add( STRING( "s" + i, CONTAINS, preFilter ) );
             }
         }
 
@@ -67,55 +67,56 @@ public class TreePerformance {
 
         var random = new Random();
 
-        for (int i = 0; i < selections; i++) {
+        for( int i = 0; i < selections; i++ ) {
             var data = new ArrayList<>();
 
-            for (int x = 0; x < dimensions; x++) {
-                var v = 1L + random.nextInt(selections / 2 - 1);
-                if (x % 2 == 0) {
-                    data.add(v);
+            for( int x = 0; x < dimensions; x++ ) {
+                var v = 1L + random.nextInt( selections / 2 - 1 );
+                if( x % 2 == 0 ) {
+                    data.add( v );
                 } else {
-                    data.add(String.valueOf(v));
+                    data.add( String.valueOf( v ) );
                 }
             }
 
-            gen.put("selection" + i, data);
-            qData.add(data);
+            gen.put( "selection" + i, data );
+            qData.add( data );
         }
 
-        var sData = new ArrayList<>(qData);
+        var sData = new ArrayList<>( qData );
 
-        var bids = (long) ((requests - selections) * rate);
+        var bids = ( long ) ( ( requests - selections ) * rate );
         var nobids = requests - selections - bids;
 
-        for (var i = 0; i < bids; i++) {
-            qData.add(sData.get(RandomUtils.nextInt(0, selections)));
+        for( var i = 0; i < bids; i++ ) {
+            qData.add( sData.get( RandomUtils.nextInt( 0, selections ) ) );
         }
 
-        for (var i = 0; i < nobids; i++) {
-            var r = new ArrayList<>(sData.get(RandomUtils.nextInt(0, selections)));
-            for (var x = 0; x < r.size(); x++) {
-                var item = r.get(x);
-                r.set(x, item instanceof Long ? (Long) item + 1 : item + "1");
+        for( var i = 0; i < nobids; i++ ) {
+            var r = new ArrayList<>( sData.get( RandomUtils.nextInt( 0, selections ) ) );
+            for( var x = 0; x < r.size(); x++ ) {
+                var item = r.get( x );
+                r.set( x, item instanceof Long ? ( Long ) item + 1 : item + "1" );
             }
-            qData.add(r);
+            qData.add( r );
         }
 
         var data = new ArrayList<Tree.ValueData<Object>>();
 
-        gen.forEach((selection, v) -> {
-            data.add(new Tree.ValueData<>(v, selection));
-        });
+        gen.forEach( ( selection, v ) -> {
+            data.add( new Tree.ValueData<>( v, selection ) );
+        } );
 
         var tree = Tree
-                .tree(id)
-                .withHashFillFactor(fillFactor)
-                .load(data);
+            .tree( id )
+            .withHashFillFactor( fillFactor )
+            .load( data );
 
-        benchmark("dims = " + dimensions + ", selections = " + selections + ", queries = " + requests + ", rate = " + rate + ", preFilter = " + preFilter, requests, (i) -> {
-            tree.find(qData.get(RandomUtils.nextInt(0, qData.size())));
-        }).experiments(5).run();
+        benchmark( "dims = " + dimensions + ", selections = " + selections
+            + ", queries = " + requests + ", rate = " + rate + ", preFilter = " + preFilter, requests, i -> {
+            tree.find( qData.get( RandomUtils.nextInt( 0, qData.size() ) ) );
+        } ).experiments( 5 ).run();
 
-        System.out.println(tree.getMaxDepth());
+        System.out.println( tree.getMaxDepth() );
     }
 }
