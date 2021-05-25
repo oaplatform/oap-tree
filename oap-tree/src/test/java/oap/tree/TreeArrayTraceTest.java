@@ -44,7 +44,7 @@ public class TreeArrayTraceTest {
     @Test
     public void testArrayTrace() {
         var tree = Tree
-            .<String>tree( ARRAY_LONG( "d1", null ) )
+            .<String>build( ARRAY_LONG( "d1", null ) )
             .load( l(
                 v( "1", l( a( OR, 1L, 2L ) ) ),
                 v( "2", l( a( OR, 1L, 2L ) ) ),
@@ -74,7 +74,7 @@ public class TreeArrayTraceTest {
     @Test
     public void testArrayTraceLimit() {
         var tree = Tree
-            .<String>tree( ARRAY_LONG( "d1", null ) )
+            .<String>build( ARRAY_LONG( "d1", null ) )
             .withMaxTraceListCount( 2 )
             .load( l(
                 v( "1", l( a( OR, 1L, 2L ) ) ),
@@ -97,7 +97,7 @@ public class TreeArrayTraceTest {
     @Test
     public void testArrayTraceAND() {
         var tree = Tree
-            .<String>tree( ARRAY_LONG( "d1", null ) )
+            .<String>build( ARRAY_LONG( "d1", null ) )
             .load( l(
                 v( "1", l( a( AND, 1L, 2L ) ) )
             ) );
@@ -115,7 +115,7 @@ public class TreeArrayTraceTest {
     @Test
     public void testArrayExcludeTrace() {
         final Tree<String> tree = Tree
-            .<String>tree( ARRAY_LONG( "d1", null ) )
+            .<String>build( ARRAY_LONG( "d1", null ) )
             .load( l(
                 v( "1", l( a( NOT, 1L, 2L ) ) ),
                 v( "2", l( a( NOT, 2L ) ) ),
@@ -146,7 +146,7 @@ public class TreeArrayTraceTest {
     @Test
     public void testRequired() {
         var tree = Tree
-            .<String>tree( ARRAY_LONG( "d1", null ) )
+            .<String>build( ARRAY_LONG( "d1", null ) )
             .load( l(
                 v( "1", l( a( OR, 1L, 2L ) ) ),
                 v( "2", l( a( OR, 1L, 2L ) ) ),
@@ -168,7 +168,7 @@ public class TreeArrayTraceTest {
     @Test
     public void testTraceEmptyQueryEnum() {
         var tree = Tree
-            .<String>tree( ARRAY_ENUM( "d1", TreeTraceTest.TestEnum.class, TreeTraceTest.TestEnum.UNKNOWN ) )
+            .<String>build( ARRAY_ENUM( "d1", TreeTraceTest.TestEnum.class, TreeTraceTest.TestEnum.UNKNOWN ) )
             .withHashFillFactor( 1 )
             .load( l( v( "1", l( a( OR, Test1, Test2 ) ) ) ) );
 

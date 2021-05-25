@@ -32,15 +32,12 @@ import oap.util.StringBits;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
-import static oap.tree.Consts.ANY_AS_ARRAY;
-
 @SuppressWarnings( { "checkstyle:AbstractClassName", "checkstyle:MethodName" } )
 @EqualsAndHashCode
-public abstract class Dimension {
+public abstract class Dimension<Self extends Dimension<Self>> {
     public static final int PRIORITY_DEFAULT = 0;
     public static final String EMPTY = "";
     public static final int PRIORITY_LOW = Integer.MIN_VALUE;
@@ -81,61 +78,29 @@ public abstract class Dimension {
         preFilterRejectCounter = Metrics.counter( "tree.prefilter", "name", name, "type", "reject" );
     }
 
-    public static <T extends Enum> Dimension ARRAY_ENUM( String name, Class<T> clazz, T nullValue, boolean emptyAsFailed, String groupName ) {
+    public static <T extends Enum<?>> Dimension ARRAY_ENUM( String name, Class<T> clazz, T nullValue, boolean emptyAsFailed, String groupName ) {
         return ENUM( name, clazz, null, PRIORITY_DEFAULT, nullValue, emptyAsFailed, groupName );
     }
 
-    public static <T extends Enum> Dimension ARRAY_ENUM( String name, Class<T> clazz, T nullValue, boolean emptyAsFailed ) {
+    public static <T extends Enum<?>> Dimension ARRAY_ENUM( String name, Class<T> clazz, T nullValue, boolean emptyAsFailed ) {
         return ENUM( name, clazz, null, PRIORITY_DEFAULT, nullValue, emptyAsFailed );
     }
 
-    public static <T extends Enum> Dimension ARRAY_ENUM( String name, Class<T> clazz, T nullValue ) {
+    public static <T extends Enum<?>> Dimension ARRAY_ENUM( String name, Class<T> clazz, T nullValue ) {
         return ENUM( name, clazz, null, PRIORITY_DEFAULT, nullValue, false );
     }
 
-    public static <T extends Enum> Dimension ENUM( String name, Class<T> clazz, OperationType operationType, T nullValue ) {
+    public static <T extends Enum<?>> Dimension ENUM( String name, Class<T> clazz, OperationType operationType, T nullValue ) {
         return ENUM( name, clazz, operationType, PRIORITY_DEFAULT, nullValue, false );
     }
 
-    public static <T extends Enum> Dimension ENUM( String name, Class<T> clazz, OperationType operationType, int priority, T nullValue, boolean emptyAsFailed ) {
+    public static <T extends Enum<?>> Dimension ENUM( String name, Class<T> clazz, OperationType operationType, int priority, T nullValue, boolean emptyAsFailed ) {
         return ENUM( name, clazz, operationType, priority, nullValue, emptyAsFailed, EMPTY );
     }
 
-    public static <T extends Enum> Dimension ENUM( String name, Class<T> clazz, OperationType operationType, int priority, T nullValue, boolean emptyAsFailed, String groupName ) {
-        var enumConstantsSortedByName = clazz.getEnumConstants();
-        Arrays.sort( enumConstantsSortedByName, Comparator.comparing( Enum::name ) );
-
-        var sortedToName = new String[enumConstantsSortedByName.length];
-        var ordinalToSorted = new int[enumConstantsSortedByName.length];
-
-        for( int i = 0; i < enumConstantsSortedByName.length; i++ ) {
-            sortedToName[i] = enumConstantsSortedByName[i].name();
-            ordinalToSorted[enumConstantsSortedByName[i].ordinal()] = i;
-        }
-
-        return new Dimension( name, operationType, priority,
-            nullValue == null ? ANY_AS_ARRAY
-                : new long[] { ordinalToSorted[nullValue.ordinal()] }, emptyAsFailed, false, groupName ) {
-            @Override
-            public String toString( long value ) {
-                return sortedToName[( int ) value];
-            }
-
-            @Override
-            public void reset() {
-            }
-
-            @Override
-            protected void _init( Object value ) {
-            }
-
-            @Override
-            protected long _getOrDefault( Object value ) {
-                assert value instanceof Enum : "[" + name + "] value (" + value + " ) must be Enum";
-
-                return ordinalToSorted[( ( Enum<?> ) value ).ordinal()];
-            }
-        };
+    public static <T extends Enum<?>> Dimension ENUM( String name, Class<T> clazz, OperationType operationType,
+                                                      int priority, T nullValue, boolean emptyAsFailed, String groupName ) {
+        return new EnumDimension<T>( name, clazz, operationType, priority, nullValue, emptyAsFailed, groupName );
     }
 
     public static Dimension ARRAY_STRING( String name, boolean emptyAsFailed, boolean preFilter ) {
@@ -158,40 +123,20 @@ public abstract class Dimension {
         return STRING( name, operationType, PRIORITY_DEFAULT, false, preFilter );
     }
 
-    public static Dimension STRING( String name, OperationType operationType, int priority, boolean emptyAsFailed, boolean preFilter ) {
+    public static Dimension STRING( String name, OperationType operationType, int priority,
+                                    boolean emptyAsFailed, boolean preFilter ) {
         return STRING( name, operationType, priority, emptyAsFailed, 16, 0.75f, preFilter );
     }
 
-    public static Dimension STRING( String name, OperationType operationType, int priority, boolean emptyAsFailed, int initialCapacity, float loadFactor, boolean preFilter ) {
+    public static Dimension STRING( String name, OperationType operationType, int priority,
+                                    boolean emptyAsFailed, int initialCapacity, float loadFactor, boolean preFilter ) {
         return STRING( name, operationType, priority, emptyAsFailed, initialCapacity, loadFactor, preFilter, EMPTY );
     }
 
-    public static Dimension STRING( String name, OperationType operationType, int priority, boolean emptyAsFailed, int initialCapacity, float loadFactor, boolean preFilter, String groupName ) {
-        var bits = new StringBits( initialCapacity, loadFactor );
-
-        return new Dimension( name, operationType, priority, new long[] { StringBits.UNKNOWN }, emptyAsFailed, preFilter, groupName ) {
-            @Override
-            public String toString( long value ) {
-                return bits.valueOf( value );
-            }
-
-            @Override
-            public void reset() {
-                bits.reset();
-            }
-
-            @Override
-            protected void _init( Object value ) {
-                bits.computeIfAbsent( ( String ) value );
-            }
-
-            @Override
-            protected long _getOrDefault( Object value ) {
-                assert value instanceof String : "[" + name + "] value (" + value.getClass() + " ) must be String";
-
-                return bits.get( ( String ) value );
-            }
-        };
+    public static Dimension STRING( String name, OperationType operationType, int priority,
+                                    boolean emptyAsFailed, int initialCapacity, float loadFactor, boolean preFilter, String groupName ) {
+        return new StringDimension( name, operationType, priority, new long[] { StringBits.UNKNOWN },
+            emptyAsFailed, initialCapacity, loadFactor, preFilter, groupName );
     }
 
     public static Dimension ARRAY_LONG( String name, Long nullValue ) {
@@ -215,28 +160,7 @@ public abstract class Dimension {
     }
 
     public static Dimension LONG( String name, OperationType operationType, int priority, Long nullValue, boolean emptyAsFailed, String groupName ) {
-        return new Dimension( name, operationType, priority,
-            nullValue == null ? ANY_AS_ARRAY : new long[] { nullValue }, emptyAsFailed, false, groupName ) {
-            @Override
-            public String toString( long value ) {
-                return String.valueOf( value );
-            }
-
-            @Override
-            public void reset() {
-            }
-
-            @Override
-            protected void _init( Object value ) {
-            }
-
-            @Override
-            protected long _getOrDefault( Object value ) {
-                assert value instanceof Number : "[" + name + "] value (" + value.getClass() + " ) must be Number";
-
-                return ( ( Number ) value ).longValue();
-            }
-        };
+        return new LongDimension( name, operationType, priority, nullValue, emptyAsFailed, groupName );
     }
 
     public static Dimension ARRAY_BOOLEAN( String name, Boolean nullValue ) {
@@ -260,32 +184,10 @@ public abstract class Dimension {
     }
 
     public static Dimension BOOLEAN( String name, OperationType operationType, int priority, Boolean nullValue, boolean emptyAsFailed, String groupName ) {
-        var nullAsLong = nullValue == null ? ANY_AS_ARRAY : new long[] { nullValue ? 1 : 0 };
-
-        return new Dimension( name, operationType, priority, nullAsLong, emptyAsFailed, false, groupName ) {
-            @Override
-            public String toString( long value ) {
-                return value == 0 ? "false" : "true";
-            }
-
-            @Override
-            public void reset() {
-            }
-
-            @Override
-            protected void _init( Object value ) {
-            }
-
-            @Override
-            protected long _getOrDefault( Object value ) {
-                assert value instanceof Boolean : "[" + name + "] value (" + value.getClass() + " ) must be Boolean";
-
-                return Boolean.TRUE.equals( value ) ? 1 : 0;
-            }
-        };
+        return new BooleanDimension( name, operationType, priority, nullValue, emptyAsFailed, groupName );
     }
 
-    public static long[][] convertQueryToLong( List<Dimension> dimensions, List<?> query ) {
+    public static long[][] convertQueryToLong( List<? extends Dimension<?>> dimensions, List<?> query ) {
         var size = dimensions.size();
         var longData = new long[size][];
 
@@ -304,8 +206,6 @@ public abstract class Dimension {
     public String toString() {
         return name;
     }
-
-    public abstract void reset();
 
     public final void init( Object value ) {
         if( value == null ) return;
@@ -466,6 +366,8 @@ public abstract class Dimension {
                 throw new IllegalStateException( "Unknown OperationType " + operationType );
         }
     }
+
+    public abstract Self cloneAndReset();
 
     public enum OperationType {
         CONTAINS,

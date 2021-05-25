@@ -55,7 +55,7 @@ public class TreeArrayTest {
     @Test
     public void testArray() {
         final Tree<String> tree = Tree
-            .<String>tree( ARRAY_LONG( "d1", null ) )
+            .<String>build( ARRAY_LONG( "d1", null ) )
             .load( l(
                 v( "1", l( a( OR, 1L, 2L ) ) ),
                 v( "2", l( a( OR, 2L ) ) ),
@@ -78,7 +78,7 @@ public class TreeArrayTest {
     @Test
     public void testArrayAsPrimitiveNumber() {
         final Tree<String> tree = Tree
-            .<String>tree( ARRAY_LONG( "d1", null ) )
+            .<String>build( ARRAY_LONG( "d1", null ) )
             .load( l(
                 v( "1", l( a( OR, 1L, 2L ) ) ),
                 v( "2", l( a( OR, 2L ) ) ),
@@ -94,7 +94,7 @@ public class TreeArrayTest {
     @Test
     public void testArrayAND() {
         final Tree<String> tree = Tree
-            .<String>tree( ARRAY_LONG( "d1", null ) )
+            .<String>build( ARRAY_LONG( "d1", null ) )
             .load( l(
                 v( "1", l( a( AND, 1L, 2L ) ) )
             ) );
@@ -110,7 +110,7 @@ public class TreeArrayTest {
     @Test
     public void testArrayString() {
         final Tree<String> tree = Tree
-            .<String>tree( ARRAY_STRING( "d1", false ) )
+            .<String>build( ARRAY_STRING( "d1", false ) )
             .load( l( v( "1", l( a( OR, "s1", "s2" ) ) ) ) );
 
         System.out.println( tree.toString() );
@@ -123,7 +123,7 @@ public class TreeArrayTest {
     @Test
     public void testArrayExclude() {
         final Tree<String> tree = Tree
-            .<String>tree( ARRAY_LONG( "d1", null ), LONG( "sv1", CONTAINS, null ) )
+            .<String>build( ARRAY_LONG( "d1", null ), LONG( "sv1", CONTAINS, null ) )
             .withHashFillFactor( 1 )
             .load( l(
                 v( "1", l( a( NOT, 1L, 2L ), 1 ) ),
@@ -145,7 +145,7 @@ public class TreeArrayTest {
     @Test
     public void testArrayQueryForArrayExclude() {
         final Tree<String> tree = Tree
-            .<String>tree( ARRAY_LONG( "d1", null ) )
+            .<String>build( ARRAY_LONG( "d1", null ) )
             .load( l(
                 v( "1", l( a( NOT, 1L, 2L ) ) ),
                 v( "2", l( a( NOT, 2L ) ) )
@@ -162,7 +162,7 @@ public class TreeArrayTest {
     @Test
     public void testArrayQueryForArrayExcludePreFilter() {
         final Tree<String> tree = Tree
-            .<String>tree( ARRAY_STRING( "d1", true ) )
+            .<String>build( ARRAY_STRING( "d1", true ) )
             .withPreFilters( true )
             .load( l(
                 v( "1", l( a( NOT, "1", "2" ) ) ),
@@ -180,7 +180,7 @@ public class TreeArrayTest {
     @Test
     public void testArrayOptimize() {
         final Tree<String> tree = Tree
-            .<String>tree( ARRAY_LONG( "d1", null ), ARRAY_STRING( "d2", false ) )
+            .<String>build( ARRAY_LONG( "d1", null ), ARRAY_STRING( "d2", false ) )
             .load( l(
                 v( "1", l( a( OR, 1L, 2L ), a( OR, "1", "2" ) ) ),
                 v( "2", l( a( OR, 1L, 2L ), a( OR, "1", "2" ) ) ),
@@ -202,7 +202,7 @@ public class TreeArrayTest {
     @Test
     public void testArrayAnyAny() {
         final Tree<String> tree = Tree
-            .<String>tree( ARRAY_LONG( "d1", null ) )
+            .<String>build( ARRAY_LONG( "d1", null ) )
             .load( l( v( "1", l( a( NOT ) ) ) ) );
 
         System.out.println( tree.toString() );
@@ -213,7 +213,7 @@ public class TreeArrayTest {
     @Test
     public void testFindNoData() {
         final Tree<String> tree = Tree
-            .<String>tree( ARRAY_STRING( "d1", false ), ARRAY_STRING( "d2", false ) )
+            .<String>build( ARRAY_STRING( "d1", false ), ARRAY_STRING( "d2", false ) )
             .load( l(
                 v( "1", l( a( OR ), a( NOT ) ) ),
                 v( "2", l( a( NOT ), a( OR ) ) )
@@ -229,7 +229,7 @@ public class TreeArrayTest {
     @Test
     public void testFindQueryAnyAndDimensionRequired() {
         final Tree<String> tree = Tree
-            .<String>tree( ARRAY_LONG( "d1", null ) )
+            .<String>build( ARRAY_LONG( "d1", null ) )
             .load( l( v( "1", l( a( OR ) ) ), v( "2", l( a( OR, 2L ) ) ) ) );
 
         System.out.println( tree.toString() );
@@ -243,7 +243,7 @@ public class TreeArrayTest {
     @Test
     public void testSet() {
         final Tree<String> tree = Tree
-            .<String>tree( ARRAY_LONG( "d1", null ) )
+            .<String>build( ARRAY_LONG( "d1", null ) )
             .load( l( v( "1", l( as( OR, s( 1L, 2L ) ) ) ) ) );
 
         System.out.println( tree.toString() );
@@ -257,7 +257,7 @@ public class TreeArrayTest {
     @Test
     public void testEmptyFailed() {
         final Tree<String> tree = Tree
-            .<String>tree( ARRAY_STRING( "d1", true, false ),
+            .<String>build( ARRAY_STRING( "d1", true, false ),
                 ARRAY_STRING( "d2", true, false ) )
             .load( l(
                 v( "1", l( a( OR, "1" ), a( NOT ) ) ),

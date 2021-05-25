@@ -50,7 +50,7 @@ public class TreePerformance {
     }
 
     public void benchmarkTree( double fillFactor, int selections, int dimensions, int requests, double rate, boolean preFilter ) {
-        var id = new ArrayList<Dimension>();
+        var id = new ArrayList<Dimension<?>>();
 
         for( int i = 0; i < dimensions; i++ ) {
             if( i % 2 == 0 ) {
@@ -108,7 +108,7 @@ public class TreePerformance {
         } );
 
         var tree = Tree
-            .tree( id )
+            .build( id )
             .withHashFillFactor( fillFactor )
             .load( data );
 

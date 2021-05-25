@@ -50,7 +50,7 @@ public class TreeTraceTest {
     @Test
     public void testEmptyTreeTrace() {
         var tree = Tree
-            .<String>tree( LONG( "d1", CONTAINS, null ), ENUM( "d2", TestEnum.class, CONTAINS, UNKNOWN ) )
+            .<String>build( LONG( "d1", CONTAINS, null ), ENUM( "d2", TestEnum.class, CONTAINS, UNKNOWN ) )
             .withHashFillFactor( 1 )
             .load( emptyList() );
 
@@ -63,7 +63,7 @@ public class TreeTraceTest {
     @Test
     public void testTrace() {
         var tree = Tree
-            .<String>tree( LONG( "d1", CONTAINS, null ), ENUM( "d2", TestEnum.class, CONTAINS, UNKNOWN ) )
+            .<String>build( LONG( "d1", CONTAINS, null ), ENUM( "d2", TestEnum.class, CONTAINS, UNKNOWN ) )
             .withHashFillFactor( 1 )
             .load( l( v( "1", 1L, Test1 ), v( "2", 2L, Test2 ), v( "3", 1L, Test3 ), v( "33", 1L, Test3 ) ) );
 
@@ -124,7 +124,7 @@ public class TreeTraceTest {
     @Test
     public void testTracePreFilter() {
         var tree = Tree
-            .<String>tree(
+            .<String>build(
                 STRING( "d1", CONTAINS, true ),
                 STRING( "d2", CONTAINS, true ) )
             .withPreFilters( true )
@@ -153,7 +153,7 @@ public class TreeTraceTest {
     @Test
     public void testTraceHash() {
         var tree = Tree
-            .<String>tree( LONG( "d1", CONTAINS, null ), ENUM( "d2", TestEnum.class, CONTAINS, 0, UNKNOWN, false ) )
+            .<String>build( LONG( "d1", CONTAINS, null ), ENUM( "d2", TestEnum.class, CONTAINS, 0, UNKNOWN, false ) )
             .withHashFillFactor( 0 )
             .load( l( v( "1", 1L, Test1 ),
                 v( "2", 2L, Test2 ),
@@ -217,7 +217,7 @@ public class TreeTraceTest {
     @Test
     public void testTraceUNKNOWN() {
         var tree = Tree
-            .<String>tree( STRING( "d1", CONTAINS, false ) )
+            .<String>build( STRING( "d1", CONTAINS, false ) )
             .withHashFillFactor( 1 )
             .load( l( v( "1", "str" ) ) );
 
@@ -238,7 +238,7 @@ public class TreeTraceTest {
     @Test
     public void testTraceOrQuery() {
         var tree = Tree
-            .<String>tree( LONG( "d1", CONTAINS, null ) )
+            .<String>build( LONG( "d1", CONTAINS, null ) )
             .load( l( v( "1", 1L ) ) );
 
         System.out.println( tree.toString() );
@@ -250,7 +250,7 @@ public class TreeTraceTest {
     @Test
     public void testTraceExclude() {
         var tree = Tree
-            .<String>tree( LONG( "d1", NOT_CONTAINS, null ) )
+            .<String>build( LONG( "d1", NOT_CONTAINS, null ) )
             .withHashFillFactor( 1 )
             .load( l( v( "1", 1L ), v( "2", 2L ), v( "3", 3L ), v( "33", 3L ) ) );
 
@@ -280,7 +280,7 @@ public class TreeTraceTest {
     @Test
     public void testTraceEmpty() {
         var tree = Tree
-            .<String>tree( LONG( "d1", CONTAINS, null ), LONG( "d2", CONTAINS, null ) )
+            .<String>build( LONG( "d1", CONTAINS, null ), LONG( "d2", CONTAINS, null ) )
             .withHashFillFactor( 1 )
             .load( l( v( "1", null, 99L ) ) );
 
@@ -296,7 +296,7 @@ public class TreeTraceTest {
     @Test
     public void testTraceQueryEmpty() {
         var tree = Tree
-            .<String>tree( LONG( "d1", CONTAINS, null ) )
+            .<String>build( LONG( "d1", CONTAINS, null ) )
             .withHashFillFactor( 1 )
             .load( l( v( "1", 1L ) ) );
 
@@ -312,7 +312,7 @@ public class TreeTraceTest {
     @Test
     public void testTraceEmptyQuery() {
         var tree = Tree
-            .<String>tree( LONG( "d1", CONTAINS, null ), LONG( "d2", CONTAINS, null ) )
+            .<String>build( LONG( "d1", CONTAINS, null ), LONG( "d2", CONTAINS, null ) )
             .withHashFillFactor( 1 )
             .load( l( v( "1", 1L, 2L ), v( "2", 2L, 2L ) ) );
 
@@ -332,7 +332,7 @@ public class TreeTraceTest {
     @Test
     public void testGREATER_THEN_OR_EQUAL_TO() {
         var tree = Tree
-            .<String>tree( LONG( "d1", GREATER_THEN_OR_EQUAL_TO, null ) )
+            .<String>build( LONG( "d1", GREATER_THEN_OR_EQUAL_TO, null ) )
             .withHashFillFactor( 1 )
             .load( l( v( "1", 1L ), v( "5", 5L ) ) );
 
@@ -356,7 +356,7 @@ public class TreeTraceTest {
     @Test
     public void testTraceStatistics() {
         var tree = Tree
-            .<String>tree( LONG( "d1", CONTAINS, null ), ENUM( "d2", TestEnum.class, CONTAINS, UNKNOWN ) )
+            .<String>build( LONG( "d1", CONTAINS, null ), ENUM( "d2", TestEnum.class, CONTAINS, UNKNOWN ) )
             .withHashFillFactor( 1 )
             .load( l(
                 v( "1", 1L, Test1 ),

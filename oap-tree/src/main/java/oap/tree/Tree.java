@@ -67,18 +67,18 @@ import static oap.util.Pair.__;
 public class Tree<T> {
     private final int maxTraceListCount;
     private final ArrayList<PreFilter> preFilters = new ArrayList<>();
+    private final List<? extends Dimension<?>> dimensions;
+    private final double hashFillFactor;
     TreeNode<T> root = new Leaf<>( emptyList() );
     private boolean preFilter;
-    private List<Dimension> dimensions;
-    private double hashFillFactor;
     private long nodeCount = 0;
     private long leafCount = 0;
 
-    Tree( List<Dimension> dimensions, boolean preFilter ) {
+    Tree( List<? extends Dimension<?>> dimensions, boolean preFilter ) {
         this( dimensions, 0.25, 10, preFilter );
     }
 
-    Tree( List<Dimension> dimensions, double hashFillFactor, int maxTraceListCount, boolean preFilter ) {
+    Tree( List<? extends Dimension<?>> dimensions, double hashFillFactor, int maxTraceListCount, boolean preFilter ) {
         this.dimensions = dimensions;
         this.hashFillFactor = hashFillFactor;
         this.maxTraceListCount = maxTraceListCount;
@@ -98,12 +98,12 @@ public class Tree<T> {
         return Lists.of( data );
     }
 
-    public static <T> TreeBuilder<T> tree( List<Dimension> dimensions ) {
-        return new TreeBuilder<>( dimensions );
+    public static <T> TreeBuilder<T> build( List<Dimension<?>> dimensions ) {
+        return new TreeBuilder<T>( dimensions );
     }
 
-    public static <T> TreeBuilder<T> tree( Dimension... dimensions ) {
-        return new TreeBuilder<>( asList( dimensions ) );
+    public static <T> TreeBuilder<T> build( Dimension<?>... dimensions ) {
+        return new TreeBuilder<>( List.of( dimensions ) );
     }
 
     @SafeVarargs
@@ -261,8 +261,6 @@ public class Tree<T> {
         for( int i = 0; i < dimensions.size(); i++ ) {
             var p = dimensions.get( i );
 
-            p.reset();
-
             for( var dv : data ) {
                 var v = dv.data.get( i );
                 if( v instanceof Array ) {
@@ -380,7 +378,7 @@ public class Tree<T> {
 
         final int finalSplitDimension = splitDimension >= 0 ? splitDimension : splitArrayDimension;
 
-        final Dimension dimension = dimensions.get( finalSplitDimension );
+        var dimension = dimensions.get( finalSplitDimension );
 
         if( dimension.operationType == null ) { //array
 
@@ -463,7 +461,7 @@ public class Tree<T> {
 
             final long[] qValue = query[n.dimension];
 
-            final Dimension dimension = dimensions.get( n.dimension );
+            final var dimension = dimensions.get( n.dimension );
 
             if( qValue == ANY_AS_ARRAY ) return;
 
@@ -790,12 +788,12 @@ public class Tree<T> {
     }
 
     public static class PreFilter {
-        public final Dimension dimension;
+        public final Dimension<?> dimension;
         public final int index;
         public final oap.util.BitSet bitSet;
         public final oap.util.BitSet notBitSet;
 
-        public PreFilter( Dimension dimension, int index, oap.util.BitSet bitSet, oap.util.BitSet notBitSet ) {
+        public PreFilter( Dimension<?> dimension, int index, oap.util.BitSet bitSet, oap.util.BitSet notBitSet ) {
             this.dimension = dimension;
             this.index = index;
             this.bitSet = bitSet;
@@ -883,8 +881,8 @@ public class Tree<T> {
             this.computeIfAbsent( operationType, ot -> new HashSet<>() ).addAll( v );
         }
 
-        public String toString( Dimension dimension ) {
-            String collect = entrySet().stream()
+        public String toString( Dimension<?> dimension ) {
+            return entrySet().stream()
                 .map( e -> {
                         var size = e.getValue().size();
 
@@ -895,7 +893,6 @@ public class Tree<T> {
                     }
                 )
                 .collect( joining( ", " ) );
-            return collect;
         }
     }
 

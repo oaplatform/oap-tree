@@ -24,15 +24,17 @@
 
 package oap.tree;
 
+import oap.util.Lists;
+
 import java.util.List;
 
 public class TreeBuilder<T> {
-    private List<Dimension> dimensions;
+    private List<Dimension<?>> dimensions;
     private double hashFillFactor = 0.25;
     private int maxTraceListCount = 10;
     private boolean preFilters = false;
 
-    public TreeBuilder( List<Dimension> dimensions ) {
+    public TreeBuilder( List<Dimension<?>> dimensions ) {
         this.dimensions = dimensions;
     }
 
@@ -55,7 +57,8 @@ public class TreeBuilder<T> {
     }
 
     public final Tree<T> load( List<Tree.ValueData<T>> data ) {
-        var tree = new Tree<T>( dimensions, hashFillFactor, maxTraceListCount, preFilters );
+        var clonedDimensions = Lists.map( dimensions, Dimension::cloneAndReset );
+        var tree = new Tree<T>( clonedDimensions, hashFillFactor, maxTraceListCount, preFilters );
         tree.load( data );
 
         return tree;

@@ -61,11 +61,11 @@ public class TreeTest {
     @Test
     public void testCONTAINS() {
         final Tree<String> tree = Tree
-            .<String>tree( LONG( "d1", CONTAINS, null ) )
+            .<String>build( LONG( "d1", CONTAINS, null ) )
             .withHashFillFactor( 1 )
             .load( l( v( "1", 1L ), v( "2", 2L ), v( "3", 3L ), v( "33", 3L ) ) );
 
-        System.out.println( tree.toString() );
+        System.out.println( tree );
 
         assertThat( tree.find( l( 1L ) ) ).containsOnly( "1" );
         assertThat( tree.find( l( l( 1L, 2L ) ) ) ).containsOnly( "1", "2" );
@@ -81,11 +81,11 @@ public class TreeTest {
     @Test
     public void testEmpty() {
         final Tree<String> tree = Tree
-            .<String>tree( LONG( "d1", CONTAINS, null ) )
+            .<String>build( LONG( "d1", CONTAINS, null ) )
             .withHashFillFactor( 1 )
             .load( l() );
 
-        System.out.println( tree.toString() );
+        System.out.println( tree );
 
         assertThat( tree.find( l( 5L ) ) ).isEmpty();
 
@@ -95,12 +95,12 @@ public class TreeTest {
     @Test
     public void testEmptyAsFailed() {
         final Tree<String> tree = Tree
-            .<String>tree( LONG( "d1", CONTAINS, PRIORITY_DEFAULT, null, true ),
+            .<String>build( LONG( "d1", CONTAINS, PRIORITY_DEFAULT, null, true ),
                 LONG( "d2", CONTAINS, PRIORITY_DEFAULT, null, true ) )
             .withHashFillFactor( 1 )
             .load( l( v( "1", 1L, null ) ) );
 
-        System.out.println( tree.toString() );
+        System.out.println( tree );
 
         assertThat( tree.find( l( 1L, 2L ) ) ).isEmpty();
 
@@ -110,10 +110,10 @@ public class TreeTest {
     @Test
     public void testGREATER_THEN_OR_EQUAL_TO() {
         final Tree<String> tree = Tree
-            .<String>tree( LONG( "d1", GREATER_THEN_OR_EQUAL_TO, null ) )
+            .<String>build( LONG( "d1", GREATER_THEN_OR_EQUAL_TO, null ) )
             .load( l( v( "1", 1L ), v( "5", 5L ) ) );
 
-        System.out.println( tree.toString() );
+        System.out.println( tree );
 
         assertThat( tree.find( l( 0L ) ) ).containsOnly( "1", "5" );
         assertThat( tree.find( l( 1L ) ) ).containsOnly( "1", "5" );
@@ -128,10 +128,10 @@ public class TreeTest {
     @Test
     public void testGREATER_THEN() {
         final Tree<String> tree = Tree
-            .<String>tree( LONG( "d1", GREATER_THEN, null ) )
+            .<String>build( LONG( "d1", GREATER_THEN, null ) )
             .load( l( v( "1", 1L ), v( "5", 5L ) ) );
 
-        System.out.println( tree.toString() );
+        System.out.println( tree );
 
         assertThat( tree.find( l( 0L ) ) ).containsOnly( "1", "5" );
         assertThat( tree.find( l( 1L ) ) ).containsOnly( "5" );
@@ -146,10 +146,10 @@ public class TreeTest {
     @Test
     public void testLESS_THEN_OR_EQUAL_TO() {
         final Tree<String> tree = Tree
-            .<String>tree( LONG( "d1", LESS_THEN_OR_EQUAL_TO, null ) )
+            .<String>build( LONG( "d1", LESS_THEN_OR_EQUAL_TO, null ) )
             .load( l( v( "1", 1L ), v( "5", 5L ) ) );
 
-        System.out.println( tree.toString() );
+        System.out.println( tree );
 
         assertThat( tree.find( l( 0L ) ) ).isEmpty();
 
@@ -164,10 +164,10 @@ public class TreeTest {
     @Test
     public void testLESS_THEN() {
         final Tree<String> tree = Tree
-            .<String>tree( LONG( "d1", LESS_THEN, null ) )
+            .<String>build( LONG( "d1", LESS_THEN, null ) )
             .load( l( v( "1", 1L ), v( "5", 5L ) ) );
 
-        System.out.println( tree.toString() );
+        System.out.println( tree );
 
         assertThat( tree.find( l( 0L ) ) ).isEmpty();
         assertThat( tree.find( l( 1L ) ) ).isEmpty();
@@ -182,10 +182,10 @@ public class TreeTest {
     @Test
     public void testBETWEEN_INCLUSIVE() {
         final Tree<String> tree = Tree
-            .<String>tree( LONG( "d1", BETWEEN_INCLUSIVE, null ) )
+            .<String>build( LONG( "d1", BETWEEN_INCLUSIVE, null ) )
             .load( l( v( "3", 3L ), v( "7", 7L ) ) );
 
-        System.out.println( tree.toString() );
+        System.out.println( tree );
 
         assertThat( tree.find( l( l( 0L, 9L ) ) ) ).containsOnly( "3", "7" );
         assertThat( tree.find( l( l( 1L, 7L ) ) ) ).containsOnly( "3", "7" );
@@ -203,10 +203,10 @@ public class TreeTest {
     @Test
     public void testBETWEEN_Empty() {
         final Tree<String> tree = Tree
-            .<String>tree( LONG( "d1", BETWEEN_INCLUSIVE, null ) )
+            .<String>build( LONG( "d1", BETWEEN_INCLUSIVE, null ) )
             .load( l( v( "3", 3L ), v( "7", 7L ) ) );
 
-        System.out.println( tree.toString() );
+        System.out.println( tree );
 
         assertThat( tree.find( l( Optional.empty() ) ) ).isEmpty();
     }
@@ -214,10 +214,10 @@ public class TreeTest {
     @Test
     public void testExclude() {
         final Tree<String> tree = Tree
-            .<String>tree( LONG( "d1", NOT_CONTAINS, null ) )
+            .<String>build( LONG( "d1", NOT_CONTAINS, null ) )
             .load( l( v( "1", 1L ), v( "2", 2L ), v( "3", 3L ), v( "33", 3L ) ) );
 
-        System.out.println( tree.toString() );
+        System.out.println( tree );
 
         assertThat( tree.find( l( 1L ) ) ).containsOnly( "2", "3", "33" );
         assertThat( tree.find( l( 2L ) ) ).containsOnly( "1", "3", "33" );
@@ -231,11 +231,11 @@ public class TreeTest {
     @Test
     public void testEnum() {
         final Tree<String> tree = Tree
-            .<String>tree( ENUM( "d1", TestEnum.class, CONTAINS, 0, UNKNOWN, false ) )
+            .<String>build( ENUM( "d1", TestEnum.class, CONTAINS, 0, UNKNOWN, false ) )
             .withHashFillFactor( 1 )
             .load( l( v( "1", Test1 ), v( "2", Test2 ), v( "3", Test3 ), v( "33", Test3 ) ) );
 
-        System.out.println( tree.toString() );
+        System.out.println( tree );
 
         assertThat( tree.find( l( Test1 ) ) ).containsOnly( "1" );
         assertThat( tree.find( l( Test2 ) ) ).containsOnly( "2" );
@@ -249,11 +249,11 @@ public class TreeTest {
     @Test
     public void testString() {
         final Tree<String> tree = Tree
-            .<String>tree( STRING( "d1", CONTAINS, false ) )
+            .<String>build( STRING( "d1", CONTAINS, false ) )
             .withHashFillFactor( 1 )
             .load( l( v( "1", "s1" ), v( "2", "s2" ), v( "3", "s3" ), v( "33", "s3" ) ) );
 
-        System.out.println( tree.toString() );
+        System.out.println( tree );
 
         assertThat( tree.find( l( "s1" ) ) ).containsOnly( "1" );
         assertThat( tree.find( l( "s2" ) ) ).containsOnly( "2" );
@@ -267,7 +267,7 @@ public class TreeTest {
     @Test
     public void testStringPreFilter() {
         final Tree<String> tree = Tree
-            .<String>tree( STRING( "d1", CONTAINS, true ) )
+            .<String>build( STRING( "d1", CONTAINS, true ) )
             .withHashFillFactor( 1 )
             .withPreFilters( true )
             .load( l( v( "1", "s1" ),
@@ -275,7 +275,7 @@ public class TreeTest {
                 v( "3", "s3" ),
                 v( "33", "s3" ) ) );
 
-        System.out.println( tree.toString() );
+        System.out.println( tree );
 
         assertThat( tree.find( l( "s1" ) ) ).containsOnly( "1" );
         assertThat( tree.find( l( "s2" ) ) ).containsOnly( "2" );
@@ -289,7 +289,7 @@ public class TreeTest {
     @Test
     public void testStringPreFilterAny() {
         final Tree<String> tree = Tree
-            .<String>tree( STRING( "d1", CONTAINS, true ) )
+            .<String>build( STRING( "d1", CONTAINS, true ) )
             .withHashFillFactor( 1 )
             .withPreFilters( true )
             .load( l( v( "1", "s1" ),
@@ -297,7 +297,7 @@ public class TreeTest {
                 v( "3", "s3" ),
                 v( "33", ( String ) null ) ) );
 
-        System.out.println( tree.toString() );
+        System.out.println( tree );
 
         assertThat( tree.find( l( "s1" ) ) ).containsOnly( "1", "33" );
         assertThat( tree.find( l( "s2" ) ) ).containsOnly( "2", "33" );
@@ -309,11 +309,11 @@ public class TreeTest {
     @Test
     public void testFindTwoDimension() {
         final Tree<String> tree = Tree
-            .<String>tree( LONG( "d1", CONTAINS, null ), LONG( "d2", CONTAINS, null ) )
+            .<String>build( LONG( "d1", CONTAINS, null ), LONG( "d2", CONTAINS, null ) )
             .withHashFillFactor( 1 )
             .load( l( v( "1", 1L, 1L ), v( "2", 2L, 2L ), v( "3", 1L, 3L ), v( "33", 1L, 3L ) ) );
 
-        System.out.println( tree.toString() );
+        System.out.println( tree );
 
         assertThat( tree.find( l( 1L, 1L ) ) ).containsOnly( "1" );
         assertThat( tree.find( l( 2L, 2L ) ) ).containsOnly( "2" );
@@ -328,11 +328,11 @@ public class TreeTest {
     @Test
     public void testFindTwoDimensionHash() {
         final Tree<String> tree = Tree
-            .<String>tree( LONG( "d1", CONTAINS, null ), LONG( "d2", CONTAINS, null ) )
+            .<String>build( LONG( "d1", CONTAINS, null ), LONG( "d2", CONTAINS, null ) )
             .withHashFillFactor( 0.75 )
             .load( l( v( "1", 1L, 1L ), v( "2", 2L, 2L ), v( "3", 1L, 3L ), v( "33", 1L, 3L ) ) );
 
-        System.out.println( tree.toString() );
+        System.out.println( tree );
 
         assertThat( tree.find( l( 1L, 1L ) ) ).containsOnly( "1" );
         assertThat( tree.find( l( 2L, 2L ) ) ).containsOnly( "2" );
@@ -347,7 +347,7 @@ public class TreeTest {
     @Test
     public void testFindAny() {
         final Tree<String> tree = Tree
-            .<String>tree( LONG( "d1", CONTAINS, -1, null, false ), LONG( "d2", CONTAINS, null ), LONG( "d3", CONTAINS, null ) )
+            .<String>build( LONG( "d1", CONTAINS, -1, null, false ), LONG( "d2", CONTAINS, null ), LONG( "d3", CONTAINS, null ) )
             .withHashFillFactor( 1 )
             .load( l(
                 v( "1", 1L, null, 1L ),
@@ -356,7 +356,7 @@ public class TreeTest {
                 v( "33", 1L, 3L, 1L )
             ) );
 
-        System.out.println( tree.toString() );
+        System.out.println( tree );
 
         assertThat( tree.find( l( 1L, 1L, 1L ) ) ).containsOnly( "1" );
         assertThat( tree.find( l( 2L, 2L, 1L ) ) ).containsOnly( "2" );
@@ -372,7 +372,7 @@ public class TreeTest {
     @Test
     public void testFindOrDimension() {
         final Tree<String> tree = Tree
-            .<String>tree( LONG( "d1", CONTAINS, null ) )
+            .<String>build( LONG( "d1", CONTAINS, null ) )
             .withHashFillFactor( 1 )
             .load( l(
                 v( "1", 1L ),
@@ -380,7 +380,7 @@ public class TreeTest {
                 v( "3", 3L ),
                 v( "33", 3L ) ) );
 
-        System.out.println( tree.toString() );
+        System.out.println( tree );
 
         assertThat( tree.find( l( l( 1L, 2L ) ) ) ).containsOnly( "1", "2" );
         assertThat( tree.find( l( l( 2L, 5L ) ) ) ).containsOnly( "2" );
@@ -390,7 +390,7 @@ public class TreeTest {
     @Test
     public void testFindOptionalString() {
         final Tree<String> tree = Tree
-            .<String>tree( STRING( "d1", CONTAINS, false ) )
+            .<String>build( STRING( "d1", CONTAINS, false ) )
             .withHashFillFactor( 1 )
             .load( l(
                 v( "1", "s1" ),
@@ -399,7 +399,7 @@ public class TreeTest {
                 v( "33", "s3" )
             ) );
 
-        System.out.println( tree.toString() );
+        System.out.println( tree );
 
         assertThat( tree.find( l( Optional.of( "s1" ) ) ) ).containsOnly( "1", "2" );
         assertThat( tree.find( l( ( String ) null ) ) ).containsOnly( "2" );
@@ -409,11 +409,11 @@ public class TreeTest {
     @Test
     public void testOptionalData() {
         final Tree<String> tree = Tree
-            .<String>tree( STRING( "d1", CONTAINS, false ) )
+            .<String>build( STRING( "d1", CONTAINS, false ) )
             .withHashFillFactor( 1 )
             .load( l( v( "1", Optional.of( "s1" ) ), v( "2", Optional.empty() ) ) );
 
-        System.out.println( tree.toString() );
+        System.out.println( tree );
 
         assertThat( tree.find( l( "s1" ) ) ).containsOnly( "1", "2" );
         assertThat( tree.find( l( "s2" ) ) ).containsOnly( "2" );
@@ -422,11 +422,11 @@ public class TreeTest {
     @Test
     public void testNullData() {
         final Tree<String> tree = Tree
-            .<String>tree( STRING( "d1", CONTAINS, false ) )
+            .<String>build( STRING( "d1", CONTAINS, false ) )
             .withHashFillFactor( 1 )
             .load( l( v( "1", "s1" ), v( "2", ( Object ) null ) ) );
 
-        System.out.println( tree.toString() );
+        System.out.println( tree );
 
         assertThat( tree.find( l( "s1" ) ) ).containsOnly( "1", "2" );
         assertThat( tree.find( l( "s2" ) ) ).containsOnly( "2" );
@@ -436,11 +436,11 @@ public class TreeTest {
     @Test
     public void testSet() {
         final Tree<String> tree = Tree
-            .<String>tree( LONG( "d1", CONTAINS, null ) )
+            .<String>build( LONG( "d1", CONTAINS, null ) )
             .withHashFillFactor( 1 )
             .load( l( v( "1", 1L ) ) );
 
-        System.out.println( tree.toString() );
+        System.out.println( tree );
 
         assertThat( tree.find( l( s( 1L ) ) ) ).containsOnly( "1" );
         assertThat( tree.find( l( s( 2L, 1L ) ) ) ).containsOnly( "1" );
