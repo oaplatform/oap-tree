@@ -94,7 +94,7 @@ public class Tree<T> {
     }
 
     @SafeVarargs
-    public static <T> ArrayList<T> l( T... data ) {
+    public static <T> List<T> l( T... data ) {
         return Lists.of( data );
     }
 
@@ -624,10 +624,10 @@ public class Tree<T> {
             .filter( e -> filter.test( e.getKey() ) )
             .map( e -> e.getKey().toString() + ": \n"
                     + e.getValue().entrySet().stream().map( dv -> {
-                    var dimension = dimensions.get( dv.getKey() );
-                    return "    " + dimension.name + "/" + dv.getKey() + ": "
-                        + dv.getValue().toString( dimension ) + " " + queryToString( query, dv.getKey() );
-                }
+                        var dimension = dimensions.get( dv.getKey() );
+                        return "    " + dimension.name + "/" + dv.getKey() + ": "
+                            + dv.getValue().toString( dimension ) + " " + queryToString( query, dv.getKey() );
+                    }
                 ).collect( joining( "\n" ) )
             ).collect( joining( "\n" ) );
 
