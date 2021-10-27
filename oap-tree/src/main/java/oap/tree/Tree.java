@@ -160,6 +160,7 @@ public class Tree<T> {
         }
     }
 
+    @SuppressWarnings( "checkstyle:UnnecessaryParentheses" )
     public void load( List<ValueData<T>> data ) {
         var newData = fixEmptyAsFailed( data );
         init( newData );
@@ -581,6 +582,7 @@ public class Tree<T> {
         }
     }
 
+    @SuppressWarnings( "checkstyle:UnnecessaryParentheses" )
     public String trace( List<?> query, Predicate<T> filter ) {
         var result = new HashMap<T, HashMap<Integer, TraceOperationTypeValues>>();
         var longQuery = Dimension.convertQueryToLong( dimensions, query );
@@ -636,6 +638,7 @@ public class Tree<T> {
             + ( out.length() > 0 ? "Expecting:\n" + out : ( outPF.length() == 0 ? "ALL OK" : "" ) );
     }
 
+    @SuppressWarnings( "checkstyle:UnnecessaryParentheses" )
     private String printValue( Object o ) {
         if( o == null
             || ( o instanceof Optional<?> && ( ( Optional<?> ) o ).isEmpty() )

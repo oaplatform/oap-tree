@@ -288,6 +288,7 @@ public abstract class Dimension<Self extends Dimension<Self>> {
         return bitSet;
     }
 
+    @SuppressWarnings( "checkstyle:UnnecessaryParentheses" )
     public final int direction( long[] qValue, long nodeValue ) {
         var qValueLength = qValue.length;
 
