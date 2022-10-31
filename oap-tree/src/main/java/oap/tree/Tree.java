@@ -264,12 +264,16 @@ public class Tree<T> {
 
             for( var dv : data ) {
                 var v = dv.data.get( i );
-                if( v instanceof Array ) {
-                    for( var item : ( Array ) v ) {
-                        p.init( item );
+                try {
+                    if( v instanceof Array ) {
+                        for( var item : ( Array ) v ) {
+                            p.init( item );
+                        }
+                    } else {
+                        p.init( v );
                     }
-                } else {
-                    p.init( v );
+                } catch( ClassCastException cce ) {
+                    throw new RuntimeException( "Cannot process " + dv + " field " + v, cce );
                 }
             }
         }
@@ -815,6 +819,7 @@ public class Tree<T> {
         }
     }
 
+    @ToString
     public static class ValueData<T> {
         public final List<?> data;
         public final T value;
