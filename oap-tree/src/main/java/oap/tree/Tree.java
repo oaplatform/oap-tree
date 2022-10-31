@@ -273,7 +273,7 @@ public class Tree<T> {
                         p.init( v );
                     }
                 } catch( ClassCastException cce ) {
-                    throw new RuntimeException( "Cannot process " + dv + " field " + v, cce );
+                    throw new RuntimeException( "Cannot process dimension field " + v, cce );
                 }
             }
         }
