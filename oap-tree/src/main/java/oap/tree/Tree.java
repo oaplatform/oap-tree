@@ -456,11 +456,6 @@ public class Tree<T> {
         return result;
     }
 
-    @NotNull
-    public long[][] getLongQuery( List<?> query ) {
-        return Dimension.convertQueryToLong( dimensions, query );
-    }
-
     private void find( TreeNode<T> node, long[][] query, HashSet<T> result ) {
         if( node == null ) return;
 
@@ -1103,6 +1098,11 @@ public class Tree<T> {
                 .append( dimension.name ).append( '/' ).append( this.dimension )
                 .append( ",sv:" ).append( dimension.toString( eqValue ) );
         }
+    }
+
+    @NotNull
+    public long[][] getLongQuery( List<?> query ) {
+        return Dimension.convertQueryToLong( dimensions, query );
     }
 
     public List<? extends Dimension<?>> getDimensions() {
