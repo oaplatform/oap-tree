@@ -32,6 +32,7 @@ import oap.util.Pair;
 import oap.util.Stream;
 import oap.util.Strings;
 import org.apache.commons.lang3.ArrayUtils;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -430,7 +431,7 @@ public class Tree<T> {
 
     public Set<T> find( List<?> query ) {
         var result = new HashSet<T>();
-        var longQuery = Dimension.convertQueryToLong( dimensions, query );
+        var longQuery = getLongQuery( query );
 
         if( preFilter ) {
             for( var pd : preFilters ) {
@@ -453,6 +454,11 @@ public class Tree<T> {
 
         find( root, longQuery, result );
         return result;
+    }
+
+    @NotNull
+    public long[][] getLongQuery( List<?> query ) {
+        return Dimension.convertQueryToLong( dimensions, query );
     }
 
     private void find( TreeNode<T> node, long[][] query, HashSet<T> result ) {
@@ -589,7 +595,7 @@ public class Tree<T> {
     @SuppressWarnings( "checkstyle:UnnecessaryParentheses" )
     public String trace( List<?> query, Predicate<T> filter ) {
         var result = new HashMap<T, HashMap<Integer, TraceOperationTypeValues>>();
-        var longQuery = Dimension.convertQueryToLong( dimensions, query );
+        var longQuery = getLongQuery( query );
 
         var queryStr = "query = " + Stream.of( query )
             .zipWithIndex()
@@ -658,7 +664,7 @@ public class Tree<T> {
 
         for( List<?> query : queries ) {
             var result = new HashMap<T, HashMap<Integer, TraceOperationTypeValues>>();
-            var longQuery = Dimension.convertQueryToLong( dimensions, query );
+            var longQuery = getLongQuery( query );
             trace( root, longQuery, result, new TraceBuffer(), true );
 
             var stats = result
@@ -1097,5 +1103,9 @@ public class Tree<T> {
                 .append( dimension.name ).append( '/' ).append( this.dimension )
                 .append( ",sv:" ).append( dimension.toString( eqValue ) );
         }
+    }
+
+    public List<? extends Dimension<?>> getDimensions() {
+        return new ArrayList<>( dimensions );
     }
 }
