@@ -8,7 +8,7 @@
     <parent>
         <groupId>oap</groupId>
         <artifactId>oap.maven</artifactId>
-        <version>17.3.0.8</version>
+        <version>18.3.7.3</version>
     </parent>
 
     <name>oap-tree-parent</name>
@@ -39,7 +39,7 @@
     </modules>
 
     <properties>
-        <oap-tree.project.version>17.4.3.10</oap-tree.project.version>
+        <oap-tree.project.version>17.4.4.0</oap-tree.project.version>
 
         <oap.deps.oap.version>17.10.37.7</oap.deps.oap.version>
 

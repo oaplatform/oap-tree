@@ -77,6 +77,7 @@ public class Tree<T> {
     private boolean preFilter;
     private long nodeCount = 0;
     private long leafCount = 0;
+    public boolean fullDebug;
 
     Tree( List<? extends Dimension<?>> dimensions, boolean preFilter ) {
         this( dimensions, 0.25, 10, preFilter );
@@ -433,6 +434,17 @@ public class Tree<T> {
     }
 
     public Set<T> find( List<?> query ) {
+        return find( query, new ArrayList<>() );
+    }
+
+    /**
+     * Paths will collect all path to be walked in order to make it easy to understand how and why the result was reached.
+     * NOTE: in order to have node name you have to set 'fullDebug' to true.
+     * @param query
+     * @param paths list where debug info is collected
+     * @return selections for given query
+     */
+    public Set<T> find( List<?> query, List<String> paths ) {
         var result = new HashSet<T>();
         var longQuery = getLongQuery( query );
 
@@ -455,18 +467,27 @@ public class Tree<T> {
             }
         }
 
-        find( root, longQuery, result );
+        find( root, longQuery, result, paths );
         return result;
     }
 
-    private void find( TreeNode<T> node, long[][] query, HashSet<T> result ) {
+    private String nodeToString( TreeNode<T> node ) {
+        if ( !fullDebug ) return "";
+        StringBuilder res = new StringBuilder();
+        node.print( res );
+        return res.toString();
+    }
+
+    private void find( TreeNode<T> node, long[][] query, HashSet<T> result, List<String> paths ) {
         if( node == null ) return;
 
         if( node instanceof Leaf ) {
-            result.addAll( ( ( Leaf<T> ) node ).selections );
+            List<T> selections = ( ( Leaf<T> ) node ).selections;
+            result.addAll( selections );
+            paths.add( nodeToString( node ) + " -> success: " + Joiner.on( ", " ).join( selections ) );
         } else if( node instanceof Tree.Node ) {
             final Node n = ( Node ) node;
-            find( n.any, query, result );
+            find( n.any, query, result, paths );
 
             final long[] qValue = query[n.dimension];
 
@@ -478,21 +499,29 @@ public class Tree<T> {
             if( !sets.isEmpty() ) {
                 for( ArrayBitSet set : sets ) {
                     if( set.find( qValue ) ) {
-                        find( set.equal, query, result );
+                        paths.add( nodeToString( set.equal ) + " -> go equal" );
+                        find( set.equal, query, result, paths );
                     }
                 }
             } else {
                 var direction = dimension.direction( qValue, n.eqValue );
-                if( ( direction & LEFT ) > 0 )
-                    find( n.left, query, result );
-                if( ( direction & EQUAL ) > 0 )
-                    find( n.equal, query, result );
-                if( ( direction & RIGHT ) > 0 )
-                    find( n.right, query, result );
+                if( ( direction & LEFT ) > 0 ) {
+                    paths.add( nodeToString( n.left ) + " -> go left" );
+                    find( n.left, query, result, paths );
+                }
+                if( ( direction & EQUAL ) > 0 ) {
+                    paths.add( nodeToString( n.equal ) + " -> go equal" );
+                    find( n.equal, query, result, paths );
+                }
+                if( ( direction & RIGHT ) > 0 ) {
+                    paths.add( nodeToString( n.right ) + " -> go right" );
+                    find( n.right, query, result, paths );
+                }
             }
         } else {
             final HashNode n = ( HashNode ) node;
-            find( n.any, query, result );
+            paths.add( nodeToString( n.any ) + " -> go any" );
+            find( n.any, query, result, paths );
 
             final long[] qValue = query[n.dimension];
 
@@ -502,7 +531,8 @@ public class Tree<T> {
             for( long aQValue : qValue ) {
                 final int index = ( int ) aQValue;
                 if( index < hash.length ) {
-                    find( hash[index], query, result );
+                    paths.add( nodeToString( hash[index] ) + " -> go index" );
+                    find( hash[index], query, result, paths );
                 }
             }
         }

@@ -33,6 +33,7 @@ public class TreeBuilder<T> {
     private double hashFillFactor = 0.25;
     private int maxTraceListCount = 10;
     private boolean preFilters = false;
+    private boolean fullDebug;
 
     public TreeBuilder( List<Dimension<?>> dimensions ) {
         this.dimensions = dimensions;
@@ -56,9 +57,16 @@ public class TreeBuilder<T> {
         return this;
     }
 
+    public TreeBuilder<T> withFullDebug( boolean fullDebug ) {
+        this.fullDebug = fullDebug;
+
+        return this;
+    }
+
     public final Tree<T> load( List<Tree.ValueData<T>> data ) {
         var clonedDimensions = Lists.map( dimensions, Dimension::cloneAndReset );
         var tree = new Tree<T>( clonedDimensions, hashFillFactor, maxTraceListCount, preFilters );
+        tree.fullDebug = fullDebug;
         tree.load( data );
 
         return tree;

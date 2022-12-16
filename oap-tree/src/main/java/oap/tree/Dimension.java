@@ -241,9 +241,9 @@ public abstract class Dimension<Self extends Dimension<Self>> {
                 i++;
             }
 
-            if( res.length > 1 ) {
-                Arrays.sort( res );
-            }
+//            if( res.length > 1 ) {
+//                Arrays.sort( res );
+//            }
 
             return res;
         } else if( value instanceof int[] ) {
@@ -257,9 +257,9 @@ public abstract class Dimension<Self extends Dimension<Self>> {
                 res[i] = arr[i];
             }
 
-            if( res.length > 1 ) {
-                Arrays.sort( res );
-            }
+//            if( res.length > 1 ) {
+//                Arrays.sort( res );
+//            }
 
             return res;
         } else if( value instanceof long[] ) {
@@ -269,9 +269,9 @@ public abstract class Dimension<Self extends Dimension<Self>> {
 
             var res = Arrays.copyOf( arr, arr.length );
 
-            if( res.length > 1 ) {
-                Arrays.sort( res );
-            }
+//            if( res.length > 1 ) {
+//                Arrays.sort( res );
+//            }
 
             return res;
         } else {

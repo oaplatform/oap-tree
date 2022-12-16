@@ -24,9 +24,12 @@
 
 package oap.tree;
 
+import com.google.common.base.Joiner;
 import org.testng.annotations.Test;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -313,6 +316,7 @@ public class TreeTest {
             )
             .withHashFillFactor( 1 )
             .withPreFilters( true )
+            .withFullDebug( true )
             .load( l(
                 v( "1", "s1", Test1 ),
                 v( "2", "s2", Test2 ),
@@ -324,6 +328,11 @@ public class TreeTest {
 
         assertThat( tree.toString() ).isEqualTo( treeStr );
         assertThat( tree.trace( l( "s3", Test3 ) ) ).isEqualTo( traceQuery );
+        List<String> debug = new ArrayList<>();
+        assertThat( tree.find( l( "s3", Test3 ), debug ) ).containsOnly( "3", "33" );
+        assertThat( Joiner.on( "\n" ).join( debug ) ).isEqualTo( "kdn|d:d2/1,sv:Test3 -> go equal\n"
+            + "dn|[3,33] -> go equal\n"
+            + "dn|[3,33] -> success: 3, 33" );
 
         //query [1][0]
         assertThat( tree.find( l( "s1", Test1 ) ) ).containsOnly( "1" );
