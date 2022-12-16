@@ -471,13 +471,6 @@ public class Tree<T> {
         return result;
     }
 
-    private String nodeToString( TreeNode<T> node ) {
-        if ( !fullDebug ) return "";
-        StringBuilder res = new StringBuilder();
-        node.print( res );
-        return res.toString();
-    }
-
     private void find( TreeNode<T> node, long[][] query, HashSet<T> result, List<String> paths ) {
         if( node == null ) return;
 
@@ -536,6 +529,13 @@ public class Tree<T> {
                 }
             }
         }
+    }
+
+    private String nodeToString( TreeNode<T> node ) {
+        if ( !fullDebug ) return "";
+        StringBuilder res = new StringBuilder();
+        node.print( res );
+        return res.toString();
     }
 
     public String trace( List<?> query ) {
