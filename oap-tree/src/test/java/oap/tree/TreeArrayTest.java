@@ -213,7 +213,10 @@ public class TreeArrayTest {
     @Test
     public void testFindNoData() {
         final Tree<String> tree = Tree
-            .<String>build( ARRAY_STRING( "d1", false ), ARRAY_STRING( "d2", false ) )
+            .<String>build(
+                ARRAY_STRING( "d1", false ),
+                ARRAY_STRING( "d2", false )
+            )
             .load( l(
                 v( "1", l( a( OR ), a( NOT ) ) ),
                 v( "2", l( a( NOT ), a( OR ) ) )

@@ -52,14 +52,17 @@ public class TreeArrayTraceTest {
 
         System.out.println( tree.toString() );
 
-        assertString( tree.trace( l( 1L ) ) ).isEqualTo( "query = [d1:1]\nALL OK" );
+        assertString( tree.trace( l( 1L ) ) ).isEqualTo( "query = [d1:1]\nALL OK\nFound:\n1, 2, 3\n" );
         assertString( tree.trace( l( 3L ) ) ).isEqualTo( """
             query = [d1:3]
             Expecting:
             1:\s
                 d1/0: [1,2] CONTAINS 3
             2:\s
-                d1/0: [1,2] CONTAINS 3""" );
+                d1/0: [1,2] CONTAINS 3
+            Found:
+            3
+            """ );
         assertString( tree.trace( l( 5L ) ) ).isEqualTo( """
             query = [d1:5]
             Expecting:
@@ -68,7 +71,10 @@ public class TreeArrayTraceTest {
             2:\s
                 d1/0: [1,2] CONTAINS 5
             3:\s
-                d1/0: [1,2,3] CONTAINS 5""" );
+                d1/0: [1,2,3] CONTAINS 5
+            Found:
+            0 selections
+                """ );
     }
 
     @Test
@@ -81,8 +87,6 @@ public class TreeArrayTraceTest {
                 v( "2", l( a( OR, 1L, 2L ) ) ),
                 v( "3", l( a( OR, 1L, 2L, 3L ) ) ) ) );
 
-        System.out.println( tree.toString() );
-
         assertString( tree.trace( l( 5L ) ) ).isEqualTo( """
             query = [d1:5]
             Expecting:
@@ -91,7 +95,10 @@ public class TreeArrayTraceTest {
             2:\s
                 d1/0: [1,2] CONTAINS 5
             3:\s
-                d1/0: [1,2,...] CONTAINS 5""" );
+                d1/0: [1,2,...] CONTAINS 5
+            Found:
+            0 selections
+                """ );
     }
 
     @Test
@@ -102,14 +109,16 @@ public class TreeArrayTraceTest {
                 v( "1", l( a( AND, 1L, 2L ) ) )
             ) );
 
-        System.out.println( tree.toString() );
 
-        assertString( tree.trace( l( l( 1L, 2L ) ) ) ).isEqualTo( "query = [d1:[1, 2]]\nALL OK" );
+        assertString( tree.trace( l( l( 1L, 2L ) ) ) ).isEqualTo( "query = [d1:[1, 2]]\nALL OK\nFound:\n1\n" );
         assertString( tree.trace( l( l( 3L ) ) ) ).isEqualTo( """
             query = [d1:[3]]
             Expecting:
             1:\s
-                d1/0: [1,2] CONTAINS_ALL [3]""" );
+                d1/0: [1,2] CONTAINS_ALL [3]
+            Found:
+            0 selections
+                """ );
     }
 
     @Test
@@ -131,16 +140,22 @@ public class TreeArrayTraceTest {
             2:\s
                 d1/0: [2] NOT_CONTAINS 2
             3:\s
-                d1/0: [1,2,3] NOT_CONTAINS 2""" );
+                d1/0: [1,2,3] NOT_CONTAINS 2
+            Found:
+            0 selections
+                """ );
         assertString( tree.trace( l( 1L ) ) ).isEqualTo( """
             query = [d1:1]
             Expecting:
             1:\s
                 d1/0: [1,2] NOT_CONTAINS 1
             3:\s
-                d1/0: [1,2,3] NOT_CONTAINS 1""" );
+                d1/0: [1,2,3] NOT_CONTAINS 1
+            Found:
+            2
+            """ );
 
-        assertString( tree.trace( l( 5L ) ) ).isEqualTo( "query = [d1:5]\nALL OK" );
+        assertString( tree.trace( l( 5L ) ) ).isEqualTo( "query = [d1:5]\nALL OK\nFound:\n1, 2, 3\n" );
     }
 
     @Test
@@ -162,7 +177,10 @@ public class TreeArrayTraceTest {
             2:\s
                 d1/0: [1,2] CONTAINS []
             3:\s
-                d1/0: [1,2,3] CONTAINS []""" );
+                d1/0: [1,2,3] CONTAINS []
+            Found:
+            0 selections
+                """ );
     }
 
     @Test
@@ -178,12 +196,18 @@ public class TreeArrayTraceTest {
             query = [d1:UNKNOWN]
             Expecting:
             1:\s
-                d1/0: [Test1,Test2] CONTAINS []""" );
+                d1/0: [Test1,Test2] CONTAINS []
+            Found:
+            0 selections
+                """ );
 
         assertString( tree.trace( l( Optional.empty() ) ) ).isEqualTo( """
             query = [d1:UNKNOWN]
             Expecting:
             1:\s
-                d1/0: [Test1,Test2] CONTAINS UNKNOWN""" );
+                d1/0: [Test1,Test2] CONTAINS UNKNOWN
+            Found:
+            0 selections
+                """ );
     }
 }

@@ -24,6 +24,7 @@
 
 package oap.tree;
 
+import com.google.common.base.Joiner;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 import oap.tree.Dimension.OperationType;
@@ -42,10 +43,12 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import java.util.stream.IntStream;
@@ -509,9 +512,12 @@ public class Tree<T> {
         return trace( query, key -> true );
     }
 
-    private void trace( TreeNode<T> node, long[][] query,
+    private void trace( TreeNode<T> node,
+                        long[][] query,
                         HashMap<T, HashMap<Integer, TraceOperationTypeValues>> result,
-                        TraceBuffer buffer, boolean success ) {
+                        Set<T> fitsForQuery,
+                        TraceBuffer buffer,
+                        boolean success ) {
         if( node == null ) return;
 
         if( node instanceof Leaf ) {
@@ -521,54 +527,52 @@ public class Tree<T> {
                     var dv = result.computeIfAbsent( s, ss -> new HashMap<>() );
                     buffer.forEach( ( d, otv ) ->
                         otv.forEach( ( ot, v ) ->
-                            dv
-                                .computeIfAbsent( d, dd -> new TraceOperationTypeValues() )
-                                .addAll( ot, v )
+                            dv.computeIfAbsent( d, dd -> new TraceOperationTypeValues() ).addAll( ot, v )
                         )
                     );
                 } );
             } else {
-                selections.forEach( result::remove );
+                selections.forEach( s -> {
+                    fitsForQuery.add( s );
+                    result.remove( s );
+                } );
             }
         } else if( node instanceof Tree.Node ) {
             var n = ( Node ) node;
-            trace( n.any, query, result, buffer.clone(), success );
+            trace( n.any, query, result, fitsForQuery, buffer.clone(), success );
 
             var qValue = query[n.dimension];
 
             var dimension = dimensions.get( n.dimension );
 
             if( qValue == ANY_AS_ARRAY ) {
-                trace( n.equal, query, result, buffer.cloneWith( n.dimension, n.eqValue, dimension.operationType, false ), false );
-                trace( n.right, query, result, buffer.clone(), false );
-                trace( n.left, query, result, buffer.clone(), false );
+                trace( n.equal, query, result, fitsForQuery, buffer.cloneWith( n.dimension, n.eqValue, dimension.operationType, false ), false );
+                trace( n.right, query, result, fitsForQuery, buffer.clone(), false );
+                trace( n.left, query, result, fitsForQuery, buffer.clone(), false );
 
                 for( var set : n.sets ) {
-                    trace( set.equal, query, result,
-                        buffer.cloneWith( n.dimension, set.bitSet.stream(),
-                            set.operation.operationType, false ), false );
+                    trace( set.equal, query, result, fitsForQuery, buffer.cloneWith( n.dimension, set.bitSet.stream(), set.operation.operationType, false ), false );
                 }
             } else if( !n.sets.isEmpty() ) {
                 for( var set : n.sets ) {
                     var eqSuccess = set.find( qValue );
-                    trace( set.equal, query, result, buffer.cloneWith( n.dimension, set.bitSet.stream(),
-                        set.operation.operationType, eqSuccess ), success && eqSuccess );
+                    trace( set.equal, query, result, fitsForQuery, buffer.cloneWith( n.dimension, set.bitSet.stream(), set.operation.operationType, eqSuccess ), success && eqSuccess );
                 }
             } else {
                 var direction = dimension.direction( qValue, n.eqValue );
 
                 var left = ( direction & LEFT ) > 0;
-                trace( n.left, query, result, buffer.clone(), success && left );
+                trace( n.left, query, result, fitsForQuery, buffer.clone(), success && left );
 
                 var right = ( direction & RIGHT ) > 0;
-                trace( n.right, query, result, buffer.clone(), success && right );
+                trace( n.right, query, result, fitsForQuery, buffer.clone(), success && right );
 
                 var eq = ( direction & EQUAL ) > 0;
-                trace( n.equal, query, result, buffer.cloneWith( n.dimension, n.eqValue, dimension.operationType, eq ), success && eq );
+                trace( n.equal, query, result, fitsForQuery, buffer.cloneWith( n.dimension, n.eqValue, dimension.operationType, eq ), success && eq );
             }
         } else {
             var n = ( HashNode ) node;
-            trace( n.any, query, result, buffer.clone(), success );
+            trace( n.any, query, result, fitsForQuery, buffer.clone(), success );
 
             var qValue = query[n.dimension];
 
@@ -576,12 +580,12 @@ public class Tree<T> {
 
             if( qValue == ANY_AS_ARRAY ) {
                 for( var s : n.hash ) {
-                    trace( s, query, result, buffer.clone(), false );
+                    trace( s, query, result, fitsForQuery, buffer.clone(), false );
                 }
             } else {
                 for( var i = 0; i < n.hash.length; i++ ) {
                     var contains = ArrayUtils.contains( qValue, i );
-                    trace( n.hash[i], query, result, buffer.cloneWith( n.dimension, i, dimension.operationType, contains ), success && contains );
+                    trace( n.hash[i], query, result, fitsForQuery, buffer.cloneWith( n.dimension, i, dimension.operationType, contains ), success && contains );
                 }
             }
         }
@@ -590,6 +594,7 @@ public class Tree<T> {
     @SuppressWarnings( "checkstyle:UnnecessaryParentheses" )
     public String trace( List<?> query, Predicate<T> filter ) {
         var result = new HashMap<T, HashMap<Integer, TraceOperationTypeValues>>();
+        var fitsForQuery = new TreeSet<T>();
         var longQuery = getLongQuery( query );
 
         var queryStr = "query = " + Stream.of( query )
@@ -621,9 +626,13 @@ public class Tree<T> {
         }
 
         if( outPF.length() == 0 ) {
-            trace( root, longQuery, result, new TraceBuffer(), true );
+            trace( root, longQuery, result, fitsForQuery, new TraceBuffer(), true );
         }
-
+        result
+            .entrySet()
+            .stream()
+            .map( e -> e.getKey() + " -> " + filter.test( e.getKey() ) )
+            .toList();
 
         var out = result
             .entrySet()
@@ -640,7 +649,8 @@ public class Tree<T> {
 
         return queryStr
             + ( outPF.length() > 0 ? "Tree Prefilters:\n" + outPF : "" )
-            + ( out.length() > 0 ? "Expecting:\n" + out : ( outPF.length() == 0 ? "ALL OK" : "" ) );
+            + ( out.length() > 0 ? "Expecting:\n" + out : ( outPF.length() == 0 ? "ALL OK" : "" ) )
+            + ( !fitsForQuery.isEmpty() ? "\nFound:\n" + Joiner.on( ", " ).join( fitsForQuery ) + "\n" : "\nFound:\n0 selections\n");
     }
 
     @SuppressWarnings( "checkstyle:UnnecessaryParentheses" )
@@ -659,8 +669,9 @@ public class Tree<T> {
 
         for( List<?> query : queries ) {
             var result = new HashMap<T, HashMap<Integer, TraceOperationTypeValues>>();
+            var fitsForQuery = new LinkedHashSet<T>();
             var longQuery = getLongQuery( query );
-            trace( root, longQuery, result, new TraceBuffer(), true );
+            trace( root, longQuery, result, fitsForQuery, new TraceBuffer(), true );
 
             var stats = result
                 .entrySet()

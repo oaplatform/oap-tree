@@ -95,10 +95,14 @@ public class TreeTest {
     @Test
     public void testEmptyAsFailed() {
         final Tree<String> tree = Tree
-            .<String>build( LONG( "d1", CONTAINS, PRIORITY_DEFAULT, null, true ),
-                LONG( "d2", CONTAINS, PRIORITY_DEFAULT, null, true ) )
+            .<String>build(
+                LONG( "d1", CONTAINS, PRIORITY_DEFAULT, null, true ),
+                LONG( "d2", CONTAINS, PRIORITY_DEFAULT, null, true )
+            )
             .withHashFillFactor( 1 )
-            .load( l( v( "1", 1L, null ) ) );
+            .load( l(
+                v( "1", 1L, null )
+            ) );
 
         System.out.println( tree );
 
@@ -266,24 +270,77 @@ public class TreeTest {
 
     @Test
     public void testStringPreFilter() {
+
+        String treeStr = """
+└── root:kdn|d:d1/0,sv:s3
+    ├── l:kdn|d:d1/0,sv:s2
+    │   ├── l:kdn|d:d1/0,sv:s1
+    │   │   └── eq:kdn|d:d2/1,sv:Test1
+    │   │       └── eq:dn|[1]
+    │   └── eq:kdn|d:d2/1,sv:Test2
+    │       └── eq:dn|[2]
+    ├── r:kdn|d:d1/0,sv:s5
+    │   ├── l:kdn|d:d1/0,sv:s4
+    │   │   └── eq:kdn|d:d2/1,sv:Test4
+    │   │       └── eq:dn|[4]
+    │   └── eq:kdn|d:d2/1,sv:UNKNOWN
+    │       └── eq:dn|[5]
+    └── eq:kdn|d:d2/1,sv:Test3
+        └── eq:dn|[3,33]
+            """;
+        String traceQuery = """
+            query = [d1:s3,d2:Test3]
+            Expecting:
+            1:\s
+                d1/0: [s1] CONTAINS s3
+                d2/1: [Test1] CONTAINS Test3
+            2:\s
+                d1/0: [s2] CONTAINS s3
+                d2/1: [Test2] CONTAINS Test3
+            4:\s
+                d1/0: [s4] CONTAINS s3
+                d2/1: [Test4] CONTAINS Test3
+            5:\s
+                d1/0: [s5] CONTAINS s3
+                d2/1: [UNKNOWN] CONTAINS Test3
+            Found:
+            3, 33
+            """;
         final Tree<String> tree = Tree
-            .<String>build( STRING( "d1", CONTAINS, true ) )
+            .<String>build(
+                STRING( "d1", CONTAINS, true ),
+                ENUM( "d2", TestEnum.class, CONTAINS, 0, UNKNOWN, false )
+            )
             .withHashFillFactor( 1 )
             .withPreFilters( true )
-            .load( l( v( "1", "s1" ),
-                v( "2", "s2" ),
-                v( "3", "s3" ),
-                v( "33", "s3" ) ) );
+            .load( l(
+                v( "1", "s1", Test1 ),
+                v( "2", "s2", Test2 ),
+                v( "3", "s3", Test3 ),
+                v( "33", "s3", Test3 ),
+                v( "4", "s4", Test4 ),
+                v( "5", "s5", UNKNOWN )
+            ) );
 
-        System.out.println( tree );
+        assertThat( tree.toString() ).isEqualTo( treeStr );
+        assertThat( tree.trace( l( "s3", Test3 ) ) ).isEqualTo( traceQuery );
 
-        assertThat( tree.find( l( "s1" ) ) ).containsOnly( "1" );
-        assertThat( tree.find( l( "s2" ) ) ).containsOnly( "2" );
-        assertThat( tree.find( l( "s3" ) ) ).containsOnly( "3", "33" );
+        //query [1][0]
+        assertThat( tree.find( l( "s1", Test1 ) ) ).containsOnly( "1" );
+        //query [2][1]
+        assertThat( tree.find( l( "s2", Test2 ) ) ).containsOnly( "2" );
+        //query [3][2]
+        assertThat( tree.find( l( "s3", Test3 ) ) ).containsOnly( "3", "33" );
+        //query [3][3]
+        assertThat( tree.find( l( "s3", Test4 ) ) ).isEmpty();
+        //query [3][4]
+        assertThat( tree.find( l( "s3", null ) ) ).isEmpty();
+        //query [4][0,1,2,3]
+        assertThat( tree.find( l( "s4", l( Test1, Test2, Test3, Test4 ) ) ) ).containsOnly( "4" );
+        //query [5][4]
+        assertThat( tree.find( l( "s5", UNKNOWN ) ) ).containsOnly( "5" );
 
-        assertThat( tree.find( l( "s4" ) ) ).isEmpty();
-
-        assertThat( tree.getMaxDepth() ).isEqualTo( 3 );
+        assertThat( tree.getMaxDepth() ).isEqualTo( 5 );
     }
 
     @Test

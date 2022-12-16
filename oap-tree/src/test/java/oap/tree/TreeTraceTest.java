@@ -79,7 +79,10 @@ public class TreeTraceTest {
             2:\s
                 d1/0: [2] CONTAINS 1
             3:\s
-                d2/1: [Test3] CONTAINS Test2""" );
+                d2/1: [Test3] CONTAINS Test2
+            Found:
+            0 selections
+            """ );
         assertString( tree.trace( l( 3L, Test3 ) ) ).isEqualTo( """
             query = [d1:3,d2:Test3]
             Expecting:
@@ -92,7 +95,10 @@ public class TreeTraceTest {
                 d1/0: [2] CONTAINS 3
                 d2/1: [Test2] CONTAINS Test3
             3:\s
-                d1/0: [1] CONTAINS 3""" );
+                d1/0: [1] CONTAINS 3
+            Found:
+            0 selections
+                """ );
 
         assertString( tree.trace( l( 4L, Test4 ) ) ).isEqualTo( """
             query = [d1:4,d2:Test4]
@@ -108,7 +114,10 @@ public class TreeTraceTest {
                 d2/1: [Test2] CONTAINS Test4
             3:\s
                 d1/0: [1] CONTAINS 4
-                d2/1: [Test3] CONTAINS Test4""" );
+                d2/1: [Test3] CONTAINS Test4
+            Found:
+            0 selections
+                """ );
         assertString( tree.trace( l( 1L, Test1 ) ) ).isEqualTo( """
             query = [d1:1,d2:Test1]
             Expecting:
@@ -118,7 +127,10 @@ public class TreeTraceTest {
                 d1/0: [2] CONTAINS 1
                 d2/1: [Test2] CONTAINS Test1
             3:\s
-                d2/1: [Test3] CONTAINS Test1""" );
+                d2/1: [Test3] CONTAINS Test1 
+            Found:
+            1
+                """ );
     }
 
     @Test
@@ -133,20 +145,24 @@ public class TreeTraceTest {
                 v( "3", "1", "1" ),
                 v( "33", "1", "2" ) ) );
 
-        System.out.println( tree.toString() );
-
         assertString( tree.trace( l( "1", "1" ) ) ).isEqualTo( """
             query = [d1:1,d2:1]
             Expecting:
             33:\s
                 d2/1: [2] CONTAINS 1
             2:\s
-                d1/0: [2] CONTAINS 1""" );
+                d1/0: [2] CONTAINS 1
+            Found:
+            1, 3
+                """ );
 
         assertString( tree.trace( l( "1", "5" ) ) ).isEqualTo( """
             query = [d1:1,d2:5]
             Tree Prefilters:
               Dimension: d2, q: 5
+              
+            Found:
+            0 selections
             """ );
     }
 
@@ -160,8 +176,6 @@ public class TreeTraceTest {
                 v( "3", 1L, Test3 ),
                 v( "33", 1L, Test3 ) ) );
 
-        System.out.println( tree.toString() );
-
         assertString( tree.trace( l( 1L, Test2 ) ) ).isEqualTo( """
             query = [d1:1,d2:Test2]
             Expecting:
@@ -172,7 +186,10 @@ public class TreeTraceTest {
             2:\s
                 d1/0: [2] CONTAINS 1
             3:\s
-                d2/1: [Test3] CONTAINS Test2""" );
+                d2/1: [Test3] CONTAINS Test2
+            Found:
+            0 selections
+                """ );
         assertString( tree.trace( l( 3L, Test3 ) ) ).isEqualTo( """
             query = [d1:3,d2:Test3]
             Expecting:
@@ -185,7 +202,10 @@ public class TreeTraceTest {
                 d1/0: [2] CONTAINS 3
                 d2/1: [Test2] CONTAINS Test3
             3:\s
-                d1/0: [1] CONTAINS 3""" );
+                d1/0: [1] CONTAINS 3
+            Found:
+            0 selections
+                """ );
 
         assertString( tree.trace( l( 4L, Test4 ) ) ).isEqualTo( """
             query = [d1:4,d2:Test4]
@@ -201,7 +221,10 @@ public class TreeTraceTest {
                 d2/1: [Test2] CONTAINS Test4
             3:\s
                 d1/0: [1] CONTAINS 4
-                d2/1: [Test3] CONTAINS Test4""" );
+                d2/1: [Test3] CONTAINS Test4
+            Found:
+            0 selections
+                """ );
         assertString( tree.trace( l( 1L, Test1 ) ) ).isEqualTo( """
             query = [d1:1,d2:Test1]
             Expecting:
@@ -211,7 +234,10 @@ public class TreeTraceTest {
                 d1/0: [2] CONTAINS 1
                 d2/1: [Test2] CONTAINS Test1
             3:\s
-                d2/1: [Test3] CONTAINS Test1""" );
+                d2/1: [Test3] CONTAINS Test1
+            Found:
+            1
+                """ );
     }
 
     @Test
@@ -221,18 +247,22 @@ public class TreeTraceTest {
             .withHashFillFactor( 1 )
             .load( l( v( "1", "str" ) ) );
 
-        System.out.println( tree.toString() );
-
         assertString( tree.trace( l( "tt" ) ) ).isEqualTo( """
             query = [d1:tt]
             Expecting:
             1:\s
-                d1/0: [str] CONTAINS tt""" );
+                d1/0: [str] CONTAINS tt
+            Found:
+            0 selections
+                """ );
         assertString( tree.trace( l( l( "tt", "bb" ) ) ) ).isEqualTo( """
             query = [d1:[tt, bb]]
             Expecting:
             1:\s
-                d1/0: [str] CONTAINS [tt,bb]""" );
+                d1/0: [str] CONTAINS [tt,bb]
+            Found:
+            0 selections
+                """ );
     }
 
     @Test
@@ -241,10 +271,8 @@ public class TreeTraceTest {
             .<String>build( LONG( "d1", CONTAINS, null ) )
             .load( l( v( "1", 1L ) ) );
 
-        System.out.println( tree.toString() );
-
-        assertString( tree.trace( l( l( 2L, 1L ) ) ) ).isEqualTo( "query = [d1:[2, 1]]\nALL OK" );
-        assertString( tree.trace( l( l( 1L, 2L ) ) ) ).isEqualTo( "query = [d1:[1, 2]]\nALL OK" );
+        assertString( tree.trace( l( l( 2L, 1L ) ) ) ).isEqualTo( "query = [d1:[2, 1]]\nALL OK\nFound:\n1\n" );
+        assertString( tree.trace( l( l( 1L, 2L ) ) ) ).isEqualTo( "query = [d1:[1, 2]]\nALL OK\nFound:\n1\n" );
     }
 
     @Test
@@ -254,27 +282,34 @@ public class TreeTraceTest {
             .withHashFillFactor( 1 )
             .load( l( v( "1", 1L ), v( "2", 2L ), v( "3", 3L ), v( "33", 3L ) ) );
 
-        System.out.println( tree.toString() );
-
         assertString( tree.trace( l( 1L ) ) ).isEqualTo( """
             query = [d1:1]
             Expecting:
             1:\s
-                d1/0: [1] NOT_CONTAINS 1""" );
+                d1/0: [1] NOT_CONTAINS 1
+            Found:
+            2, 3, 33
+                """ );
         assertString( tree.trace( l( 2L ) ) ).isEqualTo( """
             query = [d1:2]
             Expecting:
             2:\s
-                d1/0: [2] NOT_CONTAINS 2""" );
+                d1/0: [2] NOT_CONTAINS 2
+            Found:
+            1, 3, 33
+                """ );
         assertString( tree.trace( l( 3L ) ) ).isEqualTo( """
             query = [d1:3]
             Expecting:
             33:\s
                 d1/0: [3] NOT_CONTAINS 3
             3:\s
-                d1/0: [3] NOT_CONTAINS 3""" );
+                d1/0: [3] NOT_CONTAINS 3
+            Found:
+            1, 2
+                """ );
 
-        assertString( tree.trace( l( 5L ) ) ).isEqualTo( "query = [d1:5]\nALL OK" );
+        assertString( tree.trace( l( 5L ) ) ).isEqualTo( "query = [d1:5]\nALL OK\nFound:\n1, 3, 33, 2\n" );
     }
 
     @Test
@@ -284,13 +319,14 @@ public class TreeTraceTest {
             .withHashFillFactor( 1 )
             .load( l( v( "1", null, 99L ) ) );
 
-        System.out.println( tree.toString() );
-
         assertString( tree.trace( l( null, 1L ) ) ).isEqualTo( """
             query = [d1:UNKNOWN,d2:1]
             Expecting:
             1:\s
-                d2/1: [99] CONTAINS 1""" );
+                d2/1: [99] CONTAINS 1
+            Found:
+            0 selections
+            """ );
     }
 
     @Test
@@ -300,13 +336,14 @@ public class TreeTraceTest {
             .withHashFillFactor( 1 )
             .load( l( v( "1", 1L ) ) );
 
-        System.out.println( tree.toString() );
-
         assertString( tree.trace( l( ( Long ) null ) ) ).isEqualTo( """
             query = [d1:UNKNOWN]
             Expecting:
             1:\s
-                d1/0: [1] CONTAINS UNKNOWN""" );
+                d1/0: [1] CONTAINS UNKNOWN
+            Found:
+            0 selections
+                """ );
     }
 
     @Test
@@ -316,8 +353,6 @@ public class TreeTraceTest {
             .withHashFillFactor( 1 )
             .load( l( v( "1", 1L, 2L ), v( "2", 2L, 2L ) ) );
 
-        System.out.println( tree.toString() );
-
         assertString( tree.trace( l( l(), l( 3L ) ) ) ).isEqualTo( """
             query = [d1:UNKNOWN,d2:[3]]
             Expecting:
@@ -326,7 +361,10 @@ public class TreeTraceTest {
                 d2/1: [2] CONTAINS [3]
             2:\s
                 d1/0: [2] CONTAINS []
-                d2/1: [2] CONTAINS [3]""" );
+                d2/1: [2] CONTAINS [3]
+            Found:
+            0 selections
+            """ );
     }
 
     @Test
@@ -338,19 +376,25 @@ public class TreeTraceTest {
 
         System.out.println( tree.toString() );
 
-        assertString( tree.trace( l( 0L ) ) ).isEqualTo( "query = [d1:0]\nALL OK" );
+        assertString( tree.trace( l( 0L ) ) ).isEqualTo( "query = [d1:0]\nALL OK\nFound:\n1, 5\n" );
         assertString( tree.trace( l( 5L ) ) ).isEqualTo( """
             query = [d1:5]
             Expecting:
             1:\s
-                d1/0: [1] GREATER_THEN_OR_EQUAL_TO 5""" );
+                d1/0: [1] GREATER_THEN_OR_EQUAL_TO 5
+            Found:
+            5
+            """ );
         assertString( tree.trace( l( 6L ) ) ).isEqualTo( """
             query = [d1:6]
             Expecting:
             1:\s
                 d1/0: [1] GREATER_THEN_OR_EQUAL_TO 6
             5:\s
-                d1/0: [5] GREATER_THEN_OR_EQUAL_TO 6""" );
+                d1/0: [5] GREATER_THEN_OR_EQUAL_TO 6
+            Found:
+            0 selections
+            """ );
     }
 
     @Test
