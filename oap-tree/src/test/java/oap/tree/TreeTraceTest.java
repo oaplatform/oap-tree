@@ -309,7 +309,7 @@ public class TreeTraceTest {
             1, 2
                 """ );
 
-        assertString( tree.trace( l( 5L ) ) ).isEqualTo( "query = [d1:5]\nALL OK\nFound:\n1, 3, 33, 2\n" );
+        assertString( tree.trace( l( 5L ) ) ).isEqualTo( "query = [d1:5]\nALL OK\nFound:\n1, 2, 3, 33\n" );
     }
 
     @Test
