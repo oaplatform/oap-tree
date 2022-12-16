@@ -532,7 +532,7 @@ public class Tree<T> {
     }
 
     private String nodeToString( TreeNode<T> node ) {
-        if ( !fullDebug ) return "";
+        if ( !fullDebug || node == null ) return "";
         StringBuilder res = new StringBuilder();
         node.print( res );
         return res.toString();
