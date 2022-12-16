@@ -650,7 +650,7 @@ public class Tree<T> {
         return queryStr
             + ( outPF.length() > 0 ? "Tree Prefilters:\n" + outPF : "" )
             + ( out.length() > 0 ? "Expecting:\n" + out : ( outPF.length() == 0 ? "ALL OK" : "" ) )
-            + ( !fitsForQuery.isEmpty() ? "\nFound:\n" + Joiner.on( ", " ).join( fitsForQuery ) + "\n" : "\nFound:\n0 selections\n");
+            + ( !fitsForQuery.isEmpty() ? "\nFound:\n" + Joiner.on( ", " ).join( fitsForQuery ) + "\n" : "\nFound:\n0 selections\n" );
     }
 
     @SuppressWarnings( "checkstyle:UnnecessaryParentheses" )

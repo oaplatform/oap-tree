@@ -127,7 +127,7 @@ public class TreeTraceTest {
                 d1/0: [2] CONTAINS 1
                 d2/1: [Test2] CONTAINS Test1
             3:\s
-                d2/1: [Test3] CONTAINS Test1 
+                d2/1: [Test3] CONTAINS Test1
             Found:
             1
                 """ );
@@ -160,7 +160,7 @@ public class TreeTraceTest {
             query = [d1:1,d2:5]
             Tree Prefilters:
               Dimension: d2, q: 5
-              
+
             Found:
             0 selections
             """ );
