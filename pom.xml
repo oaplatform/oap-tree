@@ -39,7 +39,7 @@
     </modules>
 
     <properties>
-        <oap-tree.project.version>17.4.4.2</oap-tree.project.version>
+        <oap-tree.project.version>17.4.4.3</oap-tree.project.version>
 
         <oap.deps.oap.version>17.10.37.10</oap.deps.oap.version>
 
