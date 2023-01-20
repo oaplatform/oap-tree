@@ -41,7 +41,7 @@
     <properties>
         <oap-tree.project.version>17.4.4.4</oap-tree.project.version>
 
-        <oap.deps.oap.version>17.10.37.18</oap.deps.oap.version>
+        <oap.deps.oap.version>17.11.0.0-shade_okhttp-1235</oap.deps.oap.version>
 
         <oap.deps.lombok.version>1.18.24</oap.deps.lombok.version>
     </properties>
