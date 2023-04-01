@@ -40,7 +40,7 @@
 
     <properties>
         <oap-tree.project.version>18.5.1.0</oap-tree.project.version>
-        <oap.deps.oap.version>18.11.3.0</oap.deps.oap.version>
+        <oap.deps.oap.version>18.11.3.0-oap_kernel_Fix_for_service_that_implements_collection_interface-1718</oap.deps.oap.version>
 
         <oap.deps.lombok.version>1.18.24</oap.deps.lombok.version>
     </properties>
