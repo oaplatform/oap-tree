@@ -39,9 +39,10 @@ public class StringDimension extends Dimension<StringDimension> {
 
     @Override
     protected long _getOrDefault( Object value ) {
-        assert value instanceof String : "[" + name + "] value (" + value.getClass() + " ) must be String";
-
-        return bits.get( ( String ) value );
+        if ( value instanceof String str ) {
+            return bits.get( str );
+        }
+        throw new IllegalArgumentException( "dimension value '" + value + "' for '" + name + "' must be String" );
     }
 
     @Override

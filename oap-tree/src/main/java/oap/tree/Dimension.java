@@ -326,33 +326,33 @@ public abstract class Dimension<Self extends Dimension<Self>> {
                     : Direction.LEFT | Direction.RIGHT;
 
             case GREATER_THEN:
-                assert qValueLength == 1;
+                if( qValueLength != 1 ) throw new IllegalArgumentException( "must be 1 argument" );
 
                 if( head < nodeValue ) return Direction.RIGHT | Direction.EQUAL | Direction.LEFT;
                 return Direction.RIGHT;
 
             case GREATER_THEN_OR_EQUAL_TO:
-                assert qValueLength == 1;
+                if( qValueLength != 1 ) throw new IllegalArgumentException( "must be 1 argument" );
 
                 if( head < nodeValue ) return Direction.EQUAL | Direction.RIGHT | Direction.LEFT;
                 else if( head == nodeValue ) return Direction.EQUAL | Direction.RIGHT;
                 else return Direction.RIGHT;
 
             case LESS_THEN_OR_EQUAL_TO:
-                assert qValueLength == 1;
+                if( qValueLength != 1 ) throw new IllegalArgumentException( "must be 1 argument" );
 
                 if( head > nodeValue ) return Direction.EQUAL | Direction.RIGHT | Direction.LEFT;
                 else if( head == nodeValue ) return Direction.EQUAL | Direction.LEFT;
                 else return Direction.LEFT;
 
             case LESS_THEN:
-                assert qValueLength == 1;
+                if( qValueLength != 1 ) throw new IllegalArgumentException( "must be 1 argument" );
 
                 if( head > nodeValue ) return Direction.RIGHT | Direction.EQUAL | Direction.LEFT;
                 return Direction.LEFT;
 
             case BETWEEN_INCLUSIVE:
-                assert qValueLength == 2;
+                if( qValueLength != 2 ) throw new IllegalArgumentException( "must be 2 arguments" );
 
                 int ret = 0;
                 var right = qValue[1];

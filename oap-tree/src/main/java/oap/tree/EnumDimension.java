@@ -1,12 +1,14 @@
 package oap.tree;
 
 import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.Arrays;
 import java.util.Comparator;
 
 import static oap.tree.Consts.ANY_AS_ARRAY;
 
+@Slf4j
 public class EnumDimension<T extends Enum<?>> extends Dimension<EnumDimension<T>> {
 
     private final String[] sortedToName;
@@ -53,9 +55,10 @@ public class EnumDimension<T extends Enum<?>> extends Dimension<EnumDimension<T>
 
     @Override
     protected long _getOrDefault( Object value ) {
-        assert value instanceof Enum : "[" + name + "] value (" + value + " ) must be Enum";
-
-        return ordinalToSorted[( ( Enum<?> ) value ).ordinal()];
+        if ( value instanceof Enum<?> enumVal) {
+            return ordinalToSorted[( enumVal ).ordinal()];
+        }
+        throw new IllegalArgumentException( "dimension value '" + value + "' for '" + name + "' must be Enum" );
     }
 
     @Override

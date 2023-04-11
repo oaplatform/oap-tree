@@ -1,9 +1,11 @@
 package oap.tree;
 
 import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 
 import static oap.tree.Consts.ANY_AS_ARRAY;
 
+@Slf4j
 public class BooleanDimension extends Dimension<BooleanDimension> {
     public BooleanDimension( String name, OperationType operationType, int priority,
                              Boolean nullValue, boolean emptyAsFailed, String groupName ) {
@@ -27,9 +29,11 @@ public class BooleanDimension extends Dimension<BooleanDimension> {
 
     @Override
     protected long _getOrDefault( Object value ) {
-        assert value instanceof Boolean : "[" + name + "] value (" + value.getClass() + " ) must be Boolean";
-
-        return Boolean.TRUE.equals( value ) ? 1 : 0;
+        if( value instanceof Boolean boolVal ) {
+            return Boolean.TRUE.equals( boolVal ) ? 1 : 0;
+        }
+        log.warn( "dimension value '{}' for '{}' must be Boolean, but was '{}'", value, name, value.getClass().getCanonicalName() );
+        return 0;
     }
 
     @Override
