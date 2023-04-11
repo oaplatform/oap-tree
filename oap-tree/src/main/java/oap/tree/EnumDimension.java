@@ -55,8 +55,8 @@ public class EnumDimension<T extends Enum<?>> extends Dimension<EnumDimension<T>
 
     @Override
     protected long _getOrDefault( Object value ) {
-        if ( value instanceof Enum<?> enumVal) {
-            return ordinalToSorted[( enumVal ).ordinal()];
+        if ( value instanceof Enum<?> enumVal ) {
+            return ordinalToSorted[ ( enumVal ).ordinal() ];
         }
         throw new IllegalArgumentException( "dimension value '" + value + "' for '" + name + "' must be Enum" );
     }

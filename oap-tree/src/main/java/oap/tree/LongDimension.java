@@ -27,7 +27,7 @@ public class LongDimension extends Dimension<LongDimension> {
     @Override
     protected long _getOrDefault( Object value ) {
         if ( value instanceof Number numb ) {
-            return ( numb ).longValue();
+            return numb.longValue();
         }
         throw new IllegalArgumentException( "dimension value '" + value + "' for '" + name + "' must be Number" );
     }
