@@ -188,8 +188,8 @@ public class Tree<T> {
                 for( var v : data ) {
                     var dv = v.data.get( i );
                     if( dv == null
-                        || ( dv instanceof Optional<?> && ( ( Optional<?> ) dv ).isEmpty() )
-                        || ( dv instanceof Collection<?> && ( ( Collection<?> ) dv ).isEmpty() )
+                        || ( dv instanceof Optional<?> odv && odv.isEmpty() )
+                        || ( dv instanceof Collection<?> cdv && cdv.isEmpty() )
                     ) {
                         ok = false;
                         break;
@@ -227,8 +227,8 @@ public class Tree<T> {
 
                 var v = vd.data.get( i );
                 if( v == null ) break next;
-                if( v instanceof Optional && ( ( Optional<?> ) v ).isEmpty() ) break next;
-                if( v instanceof Array && ( ( Array ) v ).isEmpty() ) break next;
+                if( v instanceof Optional ov && ov.isEmpty() ) break next;
+                if( v instanceof Array av && av.isEmpty() ) break next;
             }
             res.add( vd );
         }
@@ -270,8 +270,8 @@ public class Tree<T> {
             for( var dv : data ) {
                 var v = dv.data.get( i );
                 try {
-                    if( v instanceof Array ) {
-                        for( var item : ( Array ) v ) {
+                    if( v instanceof Array av ) {
+                        for( var item : av ) {
                             p.init( item );
                         }
                     } else {
@@ -392,7 +392,7 @@ public class Tree<T> {
 
         if( dimension.operationType == null ) { //array
 
-            Pair<List<ValueData<T>>, List<ValueData<T>>> partition = Lists.partition( data, vd -> !( ( Array ) vd.data.get( finalSplitDimension ) ).isEmpty() );
+            Pair<List<ValueData<T>>, List<ValueData<T>>> partition = Lists.partition( data, vd -> !getArrayFromDataList( finalSplitDimension, vd ).isEmpty() );
 
             return new SplitDimension( finalSplitDimension, Consts.ANY, emptyList(), emptyList(), emptyList(), partition._2, partition._1, emptyList() );
         } else {
@@ -431,6 +431,11 @@ public class Tree<T> {
                 return new SplitDimension( finalSplitDimension, splitValue, left, right, eq, any, emptyList(), emptyList() );
             }
         }
+    }
+
+    private Array getArrayFromDataList( int finalSplitDimension, ValueData<T> vd ) {
+        Object o = vd.data.get( finalSplitDimension );
+        return o instanceof Array arr ? arr : new Array( Collections.emptyList(), ArrayOperation.OR );
     }
 
     public Set<T> find( List<?> query ) {

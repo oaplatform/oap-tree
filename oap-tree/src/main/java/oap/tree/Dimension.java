@@ -224,47 +224,34 @@ public abstract class Dimension<Self extends Dimension<Self>> {
     public final long[] getOrDefault( Object value, long[] emptyValue ) {
         if( value == null ) return emptyValue;
 
-        if( value instanceof Optional<?> ) {
-            var optValue = ( Optional<?> ) value;
+        if( value instanceof Optional<?> optValue ) {
             return optValue.map( v -> getOrDefault( v, emptyValue ) ).orElse( emptyValue );
         }
-
-        if( value instanceof Collection ) {
-            var list = ( Collection<?> ) value;
-
+        if( value instanceof Collection list ) {
             if( list.isEmpty() ) return emptyValue;
-
             var res = new long[list.size()];
             var i = 0;
             for( var item : list ) {
                 res[i] = _getOrDefault( item );
                 i++;
             }
-
 //            if( res.length > 1 ) {
 //                Arrays.sort( res );
 //            }
-
             return res;
-        } else if( value instanceof int[] ) {
-            var arr = ( int[] ) value;
-
+        }
+        if( value instanceof int[] arr ) {
             if( arr.length == 0 ) return emptyValue;
-
             var res = new long[arr.length];
-
             for( var i = 0; i < arr.length; i++ ) {
                 res[i] = arr[i];
             }
-
 //            if( res.length > 1 ) {
 //                Arrays.sort( res );
 //            }
-
             return res;
-        } else if( value instanceof long[] ) {
-            var arr = ( long[] ) value;
-
+        }
+        if( value instanceof long[] arr ) {
             if( arr.length == 0 ) return emptyValue;
 
             var res = Arrays.copyOf( arr, arr.length );
@@ -274,9 +261,8 @@ public abstract class Dimension<Self extends Dimension<Self>> {
 //            }
 
             return res;
-        } else {
-            return new long[] { _getOrDefault( value ) };
         }
+        return new long[] { _getOrDefault( value ) };
     }
 
     protected abstract long _getOrDefault( Object value );
@@ -294,31 +280,24 @@ public abstract class Dimension<Self extends Dimension<Self>> {
 
         var head = qValue[0];
         switch( operationType ) {
-            case CONTAINS:
-            case CONTAINS_ALL:
+            case CONTAINS, CONTAINS_ALL:
                 if( qValueLength == 1 ) {
                     if( head > nodeValue ) return Direction.RIGHT;
                     else if( head < nodeValue ) return Direction.LEFT;
-                    else return Direction.EQUAL;
-                } else {
-                    var v = 0;
-
-                    var last = qValue[qValueLength - 1];
-
-                    if( last > nodeValue ) v |= Direction.RIGHT;
-                    if( head < nodeValue ) v |= Direction.LEFT;
-
-                    for( var i = 0; i < qValue.length; i++ ) {
-                        var item = qValue[i];
-
-                        if( item == nodeValue ) {
-                            v |= Direction.EQUAL;
-                            break;
-                        }
-                    }
-
-                    return v;
+                    return Direction.EQUAL;
                 }
+                var v = 0;
+                var last = qValue[qValueLength - 1];
+                if( last > nodeValue ) v |= Direction.RIGHT;
+                if( head < nodeValue ) v |= Direction.LEFT;
+
+                for( long item : qValue ) {
+                    if( item == nodeValue ) {
+                        v |= Direction.EQUAL;
+                        break;
+                    }
+                }
+                return v;
 
             case NOT_CONTAINS:
                 return qValueLength > 1 || head != nodeValue
@@ -326,33 +305,33 @@ public abstract class Dimension<Self extends Dimension<Self>> {
                     : Direction.LEFT | Direction.RIGHT;
 
             case GREATER_THEN:
-                if( qValueLength != 1 ) throw new IllegalArgumentException( "must be 1 argument" );
+                if( qValueLength != 1 ) throw new IllegalArgumentException( "GREATER_THEN must be exact 1 argument, but was " + qValueLength );
 
                 if( head < nodeValue ) return Direction.RIGHT | Direction.EQUAL | Direction.LEFT;
                 return Direction.RIGHT;
 
             case GREATER_THEN_OR_EQUAL_TO:
-                if( qValueLength != 1 ) throw new IllegalArgumentException( "must be 1 argument" );
+                if( qValueLength != 1 ) throw new IllegalArgumentException( "GREATER_THEN_OR_EQUAL_TO must be exact 1 argument, but was " + qValueLength );
 
                 if( head < nodeValue ) return Direction.EQUAL | Direction.RIGHT | Direction.LEFT;
                 else if( head == nodeValue ) return Direction.EQUAL | Direction.RIGHT;
                 else return Direction.RIGHT;
 
             case LESS_THEN_OR_EQUAL_TO:
-                if( qValueLength != 1 ) throw new IllegalArgumentException( "must be 1 argument" );
+                if( qValueLength != 1 ) throw new IllegalArgumentException( "LESS_THEN_OR_EQUAL_TO must be exact 1 argument, but was " + qValueLength );
 
                 if( head > nodeValue ) return Direction.EQUAL | Direction.RIGHT | Direction.LEFT;
                 else if( head == nodeValue ) return Direction.EQUAL | Direction.LEFT;
                 else return Direction.LEFT;
 
             case LESS_THEN:
-                if( qValueLength != 1 ) throw new IllegalArgumentException( "must be 1 argument" );
+                if( qValueLength != 1 ) throw new IllegalArgumentException( "LESS_THEN must be exact 1 argument, but was " + qValueLength );
 
                 if( head > nodeValue ) return Direction.RIGHT | Direction.EQUAL | Direction.LEFT;
                 return Direction.LEFT;
 
             case BETWEEN_INCLUSIVE:
-                if( qValueLength != 2 ) throw new IllegalArgumentException( "must be 2 arguments" );
+                if( qValueLength != 2 ) throw new IllegalArgumentException( "BETWEEN_INCLUSIVE must be 2 arguments, but was " + qValueLength );
 
                 int ret = 0;
                 var right = qValue[1];
