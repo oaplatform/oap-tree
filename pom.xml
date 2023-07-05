@@ -39,8 +39,8 @@
     </modules>
 
     <properties>
-        <oap-tree.project.version>18.5.1.4</oap-tree.project.version>
-        <oap.deps.oap.version>18.11.5.20</oap.deps.oap.version>
+        <oap-tree.project.version>18.5.1.5</oap-tree.project.version>
+        <oap.deps.oap.version>18.11.5.23</oap.deps.oap.version>
 
         <oap.deps.lombok.version>1.18.28</oap.deps.lombok.version>
     </properties>
