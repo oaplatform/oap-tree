@@ -57,7 +57,7 @@ public class TreeTraceTest {
         System.out.println( tree.toString() );
 
         assertString( tree.trace( l( 1L, Test2 ) ) ).isEqualTo( "query = [d1:1,d2:Test2]\n"
-            + "Tree is empty" );
+            + "Targetings tree is empty" );
     }
 
     @Test

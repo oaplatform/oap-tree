@@ -27,6 +27,7 @@ package oap.tree;
 import com.google.common.base.Joiner;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
+import lombok.extern.slf4j.Slf4j;
 import oap.tree.Dimension.OperationType;
 import oap.util.Lists;
 import oap.util.Pair;
@@ -68,6 +69,7 @@ import static oap.tree.Dimension.OperationType.CONTAINS_ALL;
 import static oap.tree.Dimension.OperationType.NOT_CONTAINS;
 import static oap.util.Pair.__;
 
+@Slf4j
 public class Tree<T> {
     private final int maxTraceListCount;
     private final ArrayList<PreFilter> preFilters = new ArrayList<>();
@@ -438,6 +440,17 @@ public class Tree<T> {
         return o instanceof Array arr ? arr : new Array( Collections.emptyList(), ArrayOperation.OR );
     }
 
+    private static boolean isSuccess( PreFilter pd, long[] vals ) {
+        var found = false;
+        for( var v : vals ) {
+            if( successIfBitEmptyOrSet( pd, v ) && successIfEmptyOrBitNotSet( pd, v ) ) {
+                found = true;
+                break;
+            }
+        }
+        return found;
+    }
+
     public Set<T> find( List<?> query ) {
         return find( query, new ArrayList<>() );
     }
@@ -456,14 +469,7 @@ public class Tree<T> {
         if( preFilter ) {
             for( var pd : preFilters ) {
                 var vals = longQuery[pd.index];
-                var found = false;
-                for( var v : vals ) {
-                    if( ( pd.bitSet.isEmpty() || pd.bitSet.get( v ) )
-                        && ( pd.notBitSet.isEmpty() || !pd.notBitSet.get( v ) ) ) {
-                        found = true;
-                        break;
-                    }
-                }
+                var found = isSuccess( pd, vals );
 
                 if( !found ) {
                     pd.dimension.preFilterRejectCounter.increment();
@@ -485,11 +491,10 @@ public class Tree<T> {
             paths.add( nodeToString( node ) + " -> success: " + Joiner.on( ", " ).join( selections ) );
         } else if( node instanceof Tree.Node ) {
             final Node n = ( Node ) node;
+
             find( n.any, query, result, paths );
-
-            final long[] qValue = query[n.dimension];
-
-            final var dimension = dimensions.get( n.dimension );
+            var qValue = query[n.dimension];
+            var dimension = dimensions.get( n.dimension );
 
             if( qValue == ANY_AS_ARRAY ) return;
 
@@ -517,15 +522,14 @@ public class Tree<T> {
                 }
             }
         } else {
-            final HashNode n = ( HashNode ) node;
+            HashNode n = ( HashNode ) node;
             paths.add( nodeToString( n.any ) + " -> go any" );
+
             find( n.any, query, result, paths );
-
-            final long[] qValue = query[n.dimension];
-
-            final TreeNode<T>[] hash = n.hash;
+            var qValue = query[n.dimension];
             if( qValue == ANY_AS_ARRAY ) return;
 
+            TreeNode<T>[] hash = n.hash;
             for( long aQValue : qValue ) {
                 final int index = ( int ) aQValue;
                 if( index < hash.length ) {
@@ -549,7 +553,7 @@ public class Tree<T> {
 
     private void trace( TreeNode<T> node,
                         long[][] query,
-                        HashMap<T, HashMap<Integer, TraceOperationTypeValues>> result,
+                        Map<T, Map<Integer, TraceOperationTypeValues>> result,
                         Set<T> fitsForQuery,
                         TraceBuffer buffer,
                         boolean success ) {
@@ -558,6 +562,7 @@ public class Tree<T> {
         if( node instanceof Leaf ) {
             var selections = ( ( Leaf<T> ) node ).selections;
             if( !success ) {
+                log.trace( "success: false" );
                 selections.forEach( s -> {
                     var dv = result.computeIfAbsent( s, ss -> new HashMap<>() );
                     buffer.forEach( ( d, otv ) ->
@@ -567,6 +572,7 @@ public class Tree<T> {
                     );
                 } );
             } else {
+                log.trace( "success: true" );
                 selections.forEach( s -> {
                     fitsForQuery.add( s );
                     result.remove( s );
@@ -574,11 +580,11 @@ public class Tree<T> {
             }
         } else if( node instanceof Tree.Node ) {
             var n = ( Node ) node;
+
             trace( n.any, query, result, fitsForQuery, buffer.clone(), success );
-
             var qValue = query[n.dimension];
-
             var dimension = dimensions.get( n.dimension );
+            log.trace( "[{}] -> {}", dimension, qValue );
 
             if( qValue == ANY_AS_ARRAY ) {
                 trace( n.equal, query, result, fitsForQuery, buffer.cloneWith( n.dimension, n.eqValue, dimension.operationType, false ), false );
@@ -607,11 +613,11 @@ public class Tree<T> {
             }
         } else {
             var n = ( HashNode ) node;
+
             trace( n.any, query, result, fitsForQuery, buffer.clone(), success );
-
             var qValue = query[n.dimension];
-
             var dimension = dimensions.get( n.dimension );
+            log.trace( "[{}] -> {}", dimension, qValue );
 
             if( qValue == ANY_AS_ARRAY ) {
                 for( var s : n.hash ) {
@@ -628,7 +634,7 @@ public class Tree<T> {
 
     @SuppressWarnings( "checkstyle:UnnecessaryParentheses" )
     public String trace( List<?> query, Predicate<T> filter ) {
-        var result = new HashMap<T, HashMap<Integer, TraceOperationTypeValues>>();
+        var result = new HashMap<T, Map<Integer, TraceOperationTypeValues>>();
         var fitsForQuery = new TreeSet<T>();
         var longQuery = getLongQuery( query );
 
@@ -638,21 +644,15 @@ public class Tree<T> {
             .collect( joining( ",", "[", "]" ) ) + "\n";
 
         if( root == null ) {
-            return queryStr + "Tree is empty";
+            return queryStr + "Targetings tree is empty";
         }
 
         var outPF = new StringBuilder();
         if( preFilter ) {
             for( var pd : preFilters ) {
                 var vals = longQuery[pd.index];
-                var found = false;
-                for( var v : vals ) {
-                    if( ( pd.bitSet.isEmpty() || pd.bitSet.get( v ) )
-                        && ( pd.notBitSet.isEmpty() || !pd.notBitSet.get( v ) ) ) {
-                        found = true;
-                        break;
-                    }
-                }
+                var found = isSuccess( pd, vals );
+                log.trace( "found: {} for (index:{})", found, pd.index );
 
                 if( !found ) {
                     outPF.append( "  Dimension: " ).append( pd.dimension.name ).append( ", q: " ).append( queryToString( query, pd.index ) ).append( "\n" );
@@ -688,6 +688,14 @@ public class Tree<T> {
             + ( !fitsForQuery.isEmpty() ? "\nFound:\n" + Joiner.on( ", " ).join( fitsForQuery ) + "\n" : "\nFound:\n0 selections\n" );
     }
 
+    private static boolean successIfEmptyOrBitNotSet( PreFilter pd, long v ) {
+        return pd.notBitSet.isEmpty() || !pd.notBitSet.get( v );
+    }
+
+    private static boolean successIfBitEmptyOrSet( PreFilter pd, long v ) {
+        return pd.bitSet.isEmpty() || pd.bitSet.get( v );
+    }
+
     @SuppressWarnings( "checkstyle:UnnecessaryParentheses" )
     private String printValue( Object o ) {
         if( o == null
@@ -703,7 +711,7 @@ public class Tree<T> {
         var resultStats = new HashMap<T, Map<String, Integer>>();
 
         for( List<?> query : queries ) {
-            var result = new HashMap<T, HashMap<Integer, TraceOperationTypeValues>>();
+            var result = new HashMap<T, Map<Integer, TraceOperationTypeValues>>();
             var fitsForQuery = new LinkedHashSet<T>();
             var longQuery = getLongQuery( query );
             trace( root, longQuery, result, fitsForQuery, new TraceBuffer(), true );
@@ -725,7 +733,7 @@ public class Tree<T> {
         return resultStats;
     }
 
-    private void mergeInto( Map<T, Map<String, Integer>> stat, HashMap<T, Map<String, Integer>> result ) {
+    private void mergeInto( Map<T, Map<String, Integer>> stat, Map<T, Map<String, Integer>> result ) {
         stat.forEach( ( s, m ) -> {
             final Map<String, Integer> statBySelection = result.computeIfAbsent( s, ss -> new HashMap<>() );
 
