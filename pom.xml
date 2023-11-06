@@ -36,10 +36,10 @@
     </modules>
 
     <properties>
-        <oap-tree.project.version>18.5.1.7</oap-tree.project.version>
-        <oap.deps.oap.version>18.12.1.2015</oap.deps.oap.version>
+        <oap-tree.project.version>18.6.0</oap-tree.project.version>
+        <oap.deps.oap.version>18.13.1</oap.deps.oap.version>
 
-        <oap.deps.lombok.version>1.18.28</oap.deps.lombok.version>
+        <oap.deps.lombok.version>1.18.30</oap.deps.lombok.version>
     </properties>
 
     <dependencies>
